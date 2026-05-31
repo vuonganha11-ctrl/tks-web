@@ -320,8 +320,9 @@ a.pstat .l{color:var(--steel)}
 
   <!-- CON NGƯỜI -->
   <section>
-    <div class="sec-h"><span class="no" style="background:var(--green)">&#9787;</span><h2>Doanh số TKS</h2><span class="cnt" id="peopleCnt"></span><span class="line"></span></div>
+    <div class="sec-h"><span class="no" style="background:var(--green)">&#9787;</span><h2>Doanh số TKS</h2><span class="line"></span></div>
     <div id="revenue"></div>
+    <div class="sec-h" style="margin-top:24px"><span class="no" style="background:var(--green)">&#128100;</span><h2>Nhân sự TKS</h2><span class="cnt" id="peopleCnt"></span><span class="line"></span></div>
     <div id="people"></div>
 
     <div class="sec-h" style="margin-top:24px"><span class="no" style="background:var(--steel)">&#9992;</span><h2 style="font-size:18px">Lịch công tác đội Services</h2><span class="cnt">Nguồn: 3 nhóm Google Chat</span><span class="line"></span></div>
@@ -469,7 +470,7 @@ function renderPeople(rows) {
   var groups = [
     { key: "dv", label: "&#128295; Dịch vụ" },
     { key: "pt", label: "&#9881; Phụ tùng" },
-    { key: "sv", label: "&#128084; Cấp phòng" }
+    { key: "sv", label: "&#127970; Văn phòng TKS" }
   ];
   var i = 0;
   $("people").innerHTML = groups.map(function (g) {
@@ -477,13 +478,18 @@ function renderPeople(rows) {
     if (!list.length) return "";
     var cards = list.map(function (r) {
       i++;
-      return '<div class="pcard"><div class="top"><div class="avatar av-' + ((i % 6) + 1) + '">' + esc(initials(r.ten)) + '</div><div><div class="nm">' + esc(r.ten) + '</div><div class="role">' + esc(r.vai_tro) + '</div></div></div>' +
+      var url = r.uid ? "https://thaikhuong.getflycrm.com/#/tasks?nature_status=processing;task_receiver=" + esc(r.uid) : "";
+      var open = url ? '<a class="pcard" target="_blank" rel="noopener" style="text-decoration:none;color:inherit;cursor:pointer" href="' + url + '">' : '<div class="pcard">';
+      var close = url ? "</a>" : "</div>";
+      return open + '<div class="top"><div class="avatar av-' + ((i % 6) + 1) + '">' + esc(initials(r.ten)) + '</div><div><div class="nm">' + esc(r.ten) + '</div><div class="role">' + esc(r.vai_tro) + '</div></div></div>' +
         '<div class="stats4">' +
         '<div class="pstat"><div class="v">' + esc(r.dang_lam) + '</div><div class="l">Đang làm</div></div>' +
         '<div class="pstat s-today"><div class="v">' + esc(r.hom_nay) + '</div><div class="l">Hôm nay</div></div>' +
         '<div class="pstat s-over"><div class="v">' + esc(r.qua_han) + '</div><div class="l">Quá hạn</div></div>' +
         '<div class="pstat s-plan"><div class="v">' + esc(r.ke_hoach) + '</div><div class="l">Kế hoạch</div></div>' +
-        '</div></div>';
+        '</div>' +
+        (url ? '<div style="text-align:right;margin-top:8px"><span style="font-size:10.5px;font-weight:700;color:var(--steel);letter-spacing:.3px">Xem ở CRM &#9656;</span></div>' : '') +
+        close;
     }).join("");
     return '<div class="deptbar"><span class="deptbadge ' + g.key + '">' + g.label + '</span></div><div class="people">' + cards + "</div>";
   }).join("");
