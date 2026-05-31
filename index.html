@@ -320,7 +320,7 @@ a.pstat .l{color:var(--steel)}
 
   <!-- CON NGƯỜI -->
   <section>
-    <div class="sec-h"><span class="no" style="background:var(--green)">&#9787;</span><h2>Con người — THAI KHUONG SERVICE</h2><span class="cnt" id="peopleCnt"></span><span class="line"></span></div>
+    <div class="sec-h"><span class="no" style="background:var(--green)">&#9787;</span><h2>Doanh số TKS</h2><span class="cnt" id="peopleCnt"></span><span class="line"></span></div>
     <div id="revenue"></div>
     <div id="people"></div>
 
@@ -461,7 +461,7 @@ function renderRevenue(rows) {
     return '<div class="dscol"><div class="dsh"><span class="badge ' + loai + '">' + name + '</span><span class="tgt">Mục tiêu năm: ' + vnd(nam.target) + '₫</span></div>' + lines + "</div>";
   }
   if (!rows.length) { $("revenue").innerHTML = ""; return; }
-  $("revenue").innerHTML = '<div class="salesreport"><div class="sr-head"><div class="sr-title">Doanh số phòng (Dịch vụ / Phụ tùng)</div></div><div class="ds2">' + col("dv", "Dịch vụ") + col("pt", "Phụ tùng") + "</div></div>";
+  $("revenue").innerHTML = '<div class="salesreport"><div class="ds2">' + col("dv", "Dịch vụ") + col("pt", "Phụ tùng") + "</div></div>";
 }
 function renderPeople(rows) {
   rows = rows || [];
