@@ -286,9 +286,9 @@ a.pstat .l{color:var(--steel)}
 
   <!-- HERO -->
   <div class="hero">
-    <div class="kick">THAI KHUONG SERVICE · ĐIỀU HÀNH</div>
+    <div class="kick">THAI KHUONG SERVICE</div>
     <h1>TKS Dashboard</h1>
-    <div class="cust" id="heroCust">Tổng quan Đơn hàng · Công việc · Con người · Sự cố</div>
+    <div class="cust" id="heroCust"></div>
     <div class="codeline" id="heroChips"><a class="chip" href="danh-sach-don.html" style="text-decoration:none">&#128203; Danh sách đơn hàng</a></div>
     <div class="right">
       <div class="logos">
@@ -419,7 +419,7 @@ function showBanner(msg) { var b = $("sampleBanner"); b.textContent = "ⓘ " + m
 
 /* ====================== RENDER ====================== */
 function renderHero(meta) {
-  $("heroDate").textContent = metaVal(meta, "cap_nhat") || "—";
+  $("heroDate").textContent = (metaVal(meta, "cap_nhat") || "—").replace("(giờ Getfly)", (function(d){function p(n){return (n<10?"0":"")+n;}return p(d.getHours())+"h"+p(d.getMinutes())+"m"+p(d.getSeconds());})(new Date()));
   var src = metaVal(meta, "nguon"); if (src) $("heroSrc").textContent = src;
 }
 function renderKPI(rows) {
