@@ -419,8 +419,8 @@ function showBanner(msg) { var b = $("sampleBanner"); b.textContent = "ⓘ " + m
 
 /* ====================== RENDER ====================== */
 function renderHero(meta) {
-  $("heroDate").textContent = (metaVal(meta, "cap_nhat") || "—").replace("(giờ Getfly)", (function(d){function p(n){return (n<10?"0":"")+n;}return p(d.getHours())+"h"+p(d.getMinutes())+"m"+p(d.getSeconds());})(new Date()));
-  var src = metaVal(meta, "nguon"); if (src) $("heroSrc").textContent = src;
+  $("heroDate").textContent = (function(){var c=metaVal(meta,"cap_nhat")||"—";var i=c.indexOf(" ");return i>=0?c.slice(0,i):c;})();
+  $("heroSrc").textContent = (function(){var c=metaVal(meta,"cap_nhat")||"";var i=c.indexOf(" ");var t=i>=0?c.slice(i+1).trim():"";t=t.replace(/h/g,":").replace(/m/g,":");if(!(t&&t.charAt(0)>="0"&&t.charAt(0)<="9"))t="";return t||(metaVal(meta,"nguon")||"");})();
 }
 function renderKPI(rows) {
   $("kpis").innerHTML = (rows || []).map(function (r) {
