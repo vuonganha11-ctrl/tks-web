@@ -278,6 +278,22 @@ a.pstat .l{color:var(--steel)}
 .ds-note{font-size:11px;color:var(--grey);margin-top:11px;line-height:1.5}
 @media(max-width:560px){.ds2{grid-template-columns:1fr}}
 
+
+.g-note{font-size:11.5px;color:var(--grey);margin:0 0 10px}
+.gantt-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:14px;background:#fff;box-shadow:var(--shadow);margin-bottom:18px}
+.g-row{display:flex;align-items:stretch;border-bottom:1px solid var(--ice2)}
+.g-row:last-child{border-bottom:0}
+.g-head{background:var(--ice)}
+.g-name{flex:0 0 150px;width:150px;display:flex;align-items:center;padding:0 12px;font-weight:700;font-size:12px;color:var(--navy);position:sticky;left:0;background:#fff;z-index:2;border-right:1px solid var(--line)}
+.g-head .g-name{background:var(--ice)}
+.g-days{display:flex;flex:0 0 auto}
+.g-day{flex:0 0 44px;width:44px;text-align:center;font-size:10.5px;font-weight:700;color:var(--steel);padding:6px 0;border-left:1px solid var(--line)}
+.g-day span{display:block;font-size:9px;color:var(--grey);font-weight:600;margin-top:2px}
+.g-day.g-today{background:#fdecec;color:var(--red)}
+.g-body{position:relative}
+.g-track{position:relative;height:42px;background-image:repeating-linear-gradient(90deg,var(--line) 0,var(--line) 1px,transparent 1px,transparent 44px)}
+.g-bar{position:absolute;top:7px;height:28px;border-radius:14px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:11px;text-decoration:none;box-shadow:0 1px 3px rgba(15,39,66,.25);overflow:hidden;white-space:nowrap;padding:0 6px;cursor:pointer}
+.g-todayline{position:absolute;top:0;bottom:0;width:2px;background:var(--red);z-index:4;pointer-events:none}
 </style>
 </head>
 <body>
@@ -326,6 +342,7 @@ a.pstat .l{color:var(--steel)}
     <div id="people"></div>
 
     <div class="sec-h" style="margin-top:24px"><span class="no" style="background:var(--steel)">&#9992;</span><h2 style="font-size:18px">Lịch công tác đội Services</h2><span class="line"></span></div>
+    <div id="gantt"></div>
     <div class="travel" id="travel"></div>
     
   </section>
@@ -494,6 +511,38 @@ function renderPeople(rows) {
     return '<div class="deptbar"><span class="deptbadge ' + g.key + '">' + g.label + '</span></div><div class="people">' + cards + "</div>";
   }).join("");
 }
+function renderGantt(lich, nhanSu){
+  var el=document.getElementById("gantt"); if(!el) return;
+  lich=lich||[]; nhanSu=nhanSu||[];
+  var DAY=86400000, YEAR=(new Date()).getFullYear();
+  var today=new Date(); today.setHours(0,0,0,0);
+  var startWin=new Date(today.getTime()-14*DAY), endWin=new Date(today.getTime()+7*DAY);
+  var nDays=Math.round((endWin-startWin)/DAY)+1;
+  var tks=nhanSu.map(function(r){return {ten:r.ten,nhom:(r.nhom||"").toLowerCase()};});
+  function strip(s){return String(s).trim().replace(/\((.*?)\)/g,"").replace(/^(a\.|c\.|ng\.|e\.|mr\.|ms\.|anh |chú |em |ông )\s*/i,"").trim();}
+  function match(nm){var s=strip(nm); if(!s) return null; var hit=null; for(var i=0;i<tks.length;i++){var p=tks[i],parts=p.ten.split(" "),last=parts[parts.length-1],last2=parts.slice(-2).join(" "); if(p.ten===s||last2===s) return p; if(last===s&&!hit) hit=p;} return hit;}
+  function rng(dt){dt=String(dt).trim(); var r=dt.match(/(\d{1,2})\s*[-–]\s*(\d{1,2})\/(\d{1,2})/); if(r){var mo=+r[3]-1;return {s:new Date(YEAR,mo,+r[1]),e:new Date(YEAR,mo,+r[2])};} var mm=dt.match(/(\d{1,2})\/(\d{1,2})/); if(mm){var d=new Date(YEAR,+mm[2]-1,+mm[1]);return {s:d,e:d};} return null;}
+  var pal=["#3d6695","#2f7d4f","#e08a00","#7a3a9b","#c0392b","#16a085","#2c82c9","#8e44ad"];
+  var taskColor={},ci=0,bars=[];
+  lich.forEach(function(r){ if((r.cot||"").toLowerCase()!=="field") return; var R=rng(r.dt); if(!R) return; String(r.ppl||"").split(/[,\/]/).forEach(function(nm){ var p=match(nm); if(!p) return; bars.push({ten:p.ten,task:r.task_id||"",s:R.s,e:R.e,desc:r.desc||""}); }); });
+  bars=bars.filter(function(b){return b.e>=startWin&&b.s<=endWin;});
+  if(!bars.length){el.innerHTML="";return;}
+  var order={}; nhanSu.forEach(function(r,i){order[r.ten]=i;});
+  var persons=[]; bars.forEach(function(b){if(persons.indexOf(b.ten)<0)persons.push(b.ten);});
+  persons.sort(function(a,b){return (order[a]==null?999:order[a])-(order[b]==null?999:order[b]);});
+  bars.forEach(function(b){if(!taskColor[b.task]){taskColor[b.task]=pal[ci%pal.length];ci++;}});
+  var dayW=44,nameW=150,wd=["CN","T2","T3","T4","T5","T6","T7"];
+  function p2(n){return (n<10?"0":"")+n;}
+  var head=""; for(var i=0;i<nDays;i++){var d=new Date(startWin.getTime()+i*DAY);var t=d.getTime()===today.getTime();head+='<div class="g-day'+(t?" g-today":"")+'">'+p2(d.getDate())+"/"+p2(d.getMonth()+1)+'<span>'+wd[d.getDay()]+'</span></div>';}
+  var todayIdx=Math.round((today-startWin)/DAY), trackW=nDays*dayW;
+  var rowsHtml=persons.map(function(pn){
+    var pb=bars.filter(function(b){return b.ten===pn;});
+    var be=pb.map(function(b){var si=Math.max(0,Math.round((b.s-startWin)/DAY)),ei=Math.min(nDays-1,Math.round((b.e-startWin)/DAY));var left=si*dayW+3,w=(ei-si+1)*dayW-6;var url=b.task?("https://thaikhuong.getflycrm.com/#/tasks/?task_id="+esc(b.task)):"";var o=url?'<a class="g-bar" target="_blank" rel="noopener" href="'+url+'"':'<div class="g-bar"';var c=url?"</a>":"</div>";return o+' title="'+esc(b.desc)+'" style="left:'+left+'px;width:'+w+'px;background:'+(taskColor[b.task]||"#3d6695")+'">'+(b.task?("#"+esc(b.task)):"")+c;}).join("");
+    return '<div class="g-row"><div class="g-name">'+esc(pn)+'</div><div class="g-track" style="width:'+trackW+'px">'+be+'</div></div>';
+  }).join("");
+  el.innerHTML='<div class="g-note">Vạch đỏ = hôm nay · trái 14 ngày trước · phải 7 ngày sau · bấm #Task để mở CRM</div><div class="gantt-wrap"><div class="gantt" style="min-width:'+(nameW+trackW)+'px"><div class="g-row g-head"><div class="g-name">Nhân sự / Ngày</div><div class="g-days">'+head+'</div></div><div class="g-body">'+rowsHtml+'<div class="g-todayline" style="left:'+(nameW+todayIdx*dayW+dayW/2)+'px"></div></div></div></div>';
+}
+
 function renderTravel(rows) {
   rows = rows || [];
   var defs = [
@@ -542,6 +591,7 @@ function renderAll(d) {
   renderRevenue(d.DoanhSo);
   renderPeople(d.NhanSu);
   renderTravel(d.LichCongTac);
+  renderGantt(d.LichCongTac, d.NhanSu);
   renderIncidents(d.SuCo);
   renderFooter(d.Meta);
 }
