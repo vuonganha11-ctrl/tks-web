@@ -12,7 +12,7 @@
   // Dựng URL gviz cho 1 tab
   function gvizUrl(sheetId, tab) {
     return "https://docs.google.com/spreadsheets/d/" + sheetId +
-      "/gviz/tq?tqx=out:json&sheet=" + encodeURIComponent(tab);
+      "/gviz/tq?tqx=out:json&headers=1&sheet=" + encodeURIComponent(tab);
   }
 
   // Bóc lớp vỏ "/*O_o*/ google.visualization.Query.setResponse(...);"
