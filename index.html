@@ -349,11 +349,22 @@ a.pstat .l{color:var(--steel)}
 
   <!-- SỰ CỐ -->
   <section>
-    <div class="sec-h"><span class="no" style="background:var(--red)">&#9888;</span><h2>Sự cố — Việc trễ hạn &amp; rủi ro</h2><span class="cnt" id="incCnt"></span><span class="line"></span></div>
+    <div class="sec-h"><span class="no" style="background:var(--red)">&#9888;</span><h2>Sự cố — Việc trễ hạn</h2><span class="cnt" id="incCnt"></span><span class="line"></span></div>
     <div class="card scrollx">
       <table>
         <thead><tr><th style="width:120px">Mức độ</th><th style="width:84px">Task</th><th>Sự cố / Nội dung</th><th style="width:96px">Trễ</th><th style="width:90px">Đơn</th><th style="width:110px"></th></tr></thead>
         <tbody id="incidentsBody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- RỦI RO -->
+  <section>
+    <div class="sec-h"><span class="no" style="background:var(--amber)">&#9889;</span><h2>Rủi ro — Theo dõi &amp; Phòng ngừa</h2><span class="cnt" id="riskCnt"></span><span class="line"></span></div>
+    <div class="card scrollx">
+      <table>
+        <thead><tr><th style="width:120px">Mức độ</th><th style="width:110px">Khả năng</th><th>Nội dung rủi ro</th><th>Giải pháp</th><th style="width:130px">Trạng thái</th></tr></thead>
+        <tbody id="risksBody"></tbody>
       </table>
     </div>
   </section>
@@ -370,7 +381,7 @@ a.pstat .l{color:var(--steel)}
    Để trống = trang hiển thị DỮ LIỆU MẪU (xem trước thiết kế).
    ==================================================================== */
 var SHEET_ID = (window.TKS_SHEET_ID || "");
-var TABS = ["Meta", "KPI", "DonHang", "NhanSu", "DoanhSo", "LichCongTac", "SuCo"];
+var TABS = ["Meta", "KPI", "DonHang", "NhanSu", "DoanhSo", "LichCongTac", "SuCo","RuiRo"];
 
 /* ====================== DỮ LIỆU MẪU ====================== */
 var SAMPLE = {
@@ -424,6 +435,10 @@ var SAMPLE = {
     { muc_do:"hi", task_id:"25697", noi_dung:"Việc quá hạn — mở task để xem chi tiết", tre:"14 ngày", don:"", action:"https://thaikhuong.getflycrm.com/#/tasks/?task_id=25697" },
     { muc_do:"md", task_id:"18461", noi_dung:"Việc quá hạn — mở task để xem chi tiết", tre:"329 ngày", don:"", action:"https://thaikhuong.getflycrm.com/#/tasks/?task_id=18461" },
     { muc_do:"md", task_id:"22893", noi_dung:"Việc quá hạn — mở task để xem chi tiết", tre:"219 ngày", don:"", action:"https://thaikhuong.getflycrm.com/#/tasks/?task_id=22893" }
+  ],
+  RuiRo:[
+    {muc_do:"hi",noi_dung:"Nhà cung cấp trọng yếu có nguy cơ thiếu hàng",kha_nang:"md",giai_phap:"Dự trữ tồn kho đệm 2 tuần, tìm nhà cung cấp thay thế",trang_thai:"Đang theo dõi"},
+    {muc_do:"md",noi_dung:"Kỹ thuật viên nghỉ dài ngày trong mùa cao điểm",kha_nang:"lo",giai_phap:"Lập kế hoạch điều phối nhân sự, đào tạo chéo",trang_thai:"Đang theo dõi"}
   ]
 };
 
@@ -580,6 +595,25 @@ function renderIncidents(rows) {
       "</tr>";
   }).join("");
 }
+function renderRisks(rows){
+  rows=rows||[];
+  $("riskCnt").textContent=rows.length+" mục";
+  var sev={hi:{c:"sev-hi",t:"Cao"},md:{c:"sev-md",t:"Trung bình"},lo:{c:"sev-lo",t:"Thấp"}};
+  var khMap={hi:"Cao",md:"Trung bình",lo:"Thấp"};
+  $("risksBody").innerHTML=rows.map(function(r){
+    var s=sev[(r.muc_do||"lo").toLowerCase()]||sev.lo;
+    var kh=khMap[(r.kha_nang||"lo").toLowerCase()]||esc(r.kha_nang)||"—";
+    var tt=r.trang_thai||"—";
+    var ttc=tt.indexOf("xảy")>=0?"sev-hi":tt.indexOf("phòng")>=0?"sev-lo":"sev-md";
+    return "<tr>"+
+      '<td><span class="sev '+s.c+'"><i></i>'+s.t+"</span></td>"+
+      "<td>"+esc(kh)+"</td>"+
+      "<td>"+esc(r.noi_dung)+"</td>"+
+      "<td>"+esc(r.giai_phap)+"</td>"+
+      '<td><span class="sev '+ttc+'" style="font-size:11px">'+esc(tt)+"</span></td>"+
+      "</tr>";
+  }).join("")||'<tr><td colspan="5" style="color:var(--grey);text-align:center;padding:16px">Chưa có rủi ro nào được ghi nhận.</td></tr>';
+}
 function renderFooter(meta) {
   $("footer").innerHTML = "Nguồn dữ liệu: " + esc(metaVal(meta, "nguon") || "Getfly CRM") +
     " · Cập nhật: " + esc(metaVal(meta, "cap_nhat") || "—") +
@@ -595,6 +629,7 @@ function renderAll(d) {
   renderTravel(d.LichCongTac);
   renderGantt(d.LichCongTac, d.NhanSu);
   renderIncidents(d.SuCo);
+  renderRisks(d.RuiRo);
   renderFooter(d.Meta);
 }
 
