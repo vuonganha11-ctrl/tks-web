@@ -507,7 +507,7 @@ function renderPeople(rows) {
         '<div class="pstat s-over"><div class="v">' + esc(r.qua_han) + '</div><div class="l">Quá hạn</div></div>' +
         '<div class="pstat s-plan"><div class="v">' + esc(r.ke_hoach) + '</div><div class="l">Kế hoạch</div></div>' +
         '</div>' +
-        (url ? '<div style="text-align:right;margin-top:8px"><span style="font-size:10.5px;font-weight:700;color:var(--steel);letter-spacing:.3px">Xem ở CRM &#9656;</span></div>' : '') +
+        (r.nghi_phep ? '<div style="margin-top:8px;font-size:11px;font-weight:600;color:#b45309;background:#fff7ed;border:1px solid #fed7aa;border-radius:6px;padding:3px 8px;display:inline-block">🌴 Nghỉ phép: ' + esc(r.nghi_phep) + '</div>' : '') +
         close;
     }).join("");
     return '<div class="deptbar"><span class="deptbadge ' + g.key + '">' + g.label + '</span></div><div class="people">' + cards + "</div>";
