@@ -155,7 +155,7 @@ footer{margin-top:34px;text-align:center;font-size:12px;color:var(--grey);line-h
 .travel{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
 .tcol{background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);overflow:hidden}
 .tcol .th{display:flex;align-items:center;gap:9px;padding:13px 15px;color:#fff;font-family:'Saira Condensed',sans-serif;font-weight:800;text-transform:uppercase;font-size:14px;letter-spacing:.02em}
-.tcol .th .ic{font-size:16px}
+.tcol .th .ic{font-size:16px}.tcol .th .th-chat{margin-left:auto;font-size:11px;font-weight:700;color:#fff;text-decoration:none;background:rgba(255,255,255,.22);padding:3px 9px;border-radius:999px;text-transform:none;letter-spacing:.01em;white-space:nowrap}.tcol .th .th-chat:hover{background:rgba(255,255,255,.4)}
 .th-field{background:linear-gradient(135deg,#173a5e,#2c5a8a)} .th-car{background:linear-gradient(135deg,#2f7d4f,#3a9b62)} .th-fly{background:linear-gradient(135deg,#e08a00,#f0a429)}
 .titems{padding:6px 14px 12px}
 .titem{padding:10px 0;border-bottom:1px solid var(--line)}
@@ -562,19 +562,33 @@ function renderGantt(lich, nhanSu){
 
 function renderTravel(rows) {
   rows = rows || [];
+  var CHAT = { field: "https://chat.google.com/room/AAAAgv6lFhw", car: "https://chat.google.com/room/AAAAbkaTwd0", fly: "https://chat.google.com/room/AAAAbkaTwd0" };
   var defs = [
-    { key: "field", cls: "th-field", ic: "&#128736;", name: "Công tác hiện trường" },
-    { key: "car", cls: "th-car", ic: "&#128656;", name: "Đặt xe" },
-    { key: "fly", cls: "th-fly", ic: "&#9992;", name: "Vé máy bay / vé xe" }
+    { key: "field", cls: "th-field", ic: "&#128736;", name: "Công tác hiện trường", recent: true },
+    { key: "car", cls: "th-car", ic: "&#128656;", name: "Đặt xe", recent: false },
+    { key: "fly", cls: "th-fly", ic: "&#9992;", name: "Vé máy bay / vé xe", recent: true }
   ];
+  var _t = new Date(); _t.setHours(0,0,0,0);
+  var _cut = _t.getTime() - 7*86400000;
+  function _end(dt){
+    var m = String(dt||"").trim().match(/^(\d{1,2})(?:\s*-\s*(\d{1,2}))?\s*\/\s*(\d{1,2})$/);
+    if(!m) return null;
+    var d = parseInt(m[2]||m[1],10), mo = parseInt(m[3],10), y = _t.getFullYear();
+    var dd = new Date(y, mo-1, d);
+    if(dd.getTime()-_t.getTime() > 200*86400000) dd = new Date(y-1, mo-1, d);
+    return dd.getTime();
+  }
   $("travel").innerHTML = defs.map(function (d) {
-    var items = rows.filter(function (r) { return (r.cot || "").toLowerCase() === d.key; }).map(function (r) {
+    var list = rows.filter(function (r) { return (r.cot || "").toLowerCase() === d.key; });
+    if (d.recent) { list = list.filter(function (r) { var en = _end(r.dt); return en === null || en >= _cut; }); }
+    var items = list.map(function (r) {
       var isToday = String(r.today) === "1" || String(r.today).toLowerCase() === "true";
       var tid = r.task_id ? ' <a class="tid" target="_blank" href="' + task(r.task_id) + '">#' + esc(r.task_id) + "</a>" : "";
       var ppl = r.ppl ? '<div class="ppl">' + esc(r.ppl) + "</div>" : "";
       return '<div class="titem' + (isToday ? " today" : "") + '"><div class="dt">' + esc(r.dt) + (isToday ? " · Hôm nay" : "") + '</div><div class="desc">' + esc(r.desc) + tid + "</div>" + ppl + "</div>";
     }).join("") || '<div class="titem"><div class="desc" style="color:var(--grey)">Chưa có lịch.</div></div>';
-    return '<div class="tcol"><div class="th ' + d.cls + '"><span class="ic">' + d.ic + "</span>" + d.name + '</div><div class="titems">' + items + "</div></div>";
+    var chat = CHAT[d.key] ? '<a class="th-chat" target="_blank" rel="noopener" href="' + CHAT[d.key] + '">Chat ↗</a>' : "";
+    return '<div class="tcol"><div class="th ' + d.cls + '"><span class="ic">' + d.ic + "</span>" + d.name + chat + '</div><div class="titems">' + items + "</div></div>";
   }).join("");
 }
 function renderIncidents(rows) {
