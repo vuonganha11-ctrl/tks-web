@@ -542,7 +542,7 @@ function renderGantt(lich, nhanSu){
     var be=pb.map(function(b){var si=Math.max(0,Math.round((b.s-startWin)/DAY)),ei=Math.min(nDays-1,Math.round((b.e-startWin)/DAY));var left=si*dayW+3,w=(ei-si+1)*dayW-6;var url=b.task?("https://thaikhuong.getflycrm.com/#/tasks/?task_id="+esc(b.task)):"";var o=url?'<a class="g-bar" target="_blank" rel="noopener" href="'+url+'"':'<div class="g-bar"';var c=url?"</a>":"</div>";return o+' title="'+esc(b.desc)+'" style="left:'+left+'px;width:'+w+'px;background:'+(taskColor[b.task]||"#3d6695")+'">'+(b.task?("#"+esc(b.task)):"")+c;}).join("");
     return '<div class="g-row"><div class="g-name">'+esc(pn)+'</div><div class="g-track" style="width:'+trackW+'px">'+be+'</div></div>';
   }).join("");
-  el.innerHTML='<div class="g-note">Vạch đỏ = hôm nay · trái 14 ngày trước · phải 7 ngày sau · bấm #Task để mở CRM</div><div class="gantt-wrap"><div class="gantt" style="min-width:'+(nameW+trackW)+'px"><div class="g-row g-head"><div class="g-name">Nhân sự / Ngày</div><div class="g-days">'+head+'</div></div><div class="g-body">'+rowsHtml+'<div class="g-todayline" style="left:'+(nameW+todayIdx*dayW+dayW/2)+'px"></div></div></div></div>';
+  el.innerHTML='<div class="gantt-wrap"><div class="gantt" style="min-width:'+(nameW+trackW)+'px"><div class="g-row g-head"><div class="g-name">Nhân sự / Ngày</div><div class="g-days">'+head+'</div></div><div class="g-body">'+rowsHtml+'<div class="g-todayline" style="left:'+(nameW+todayIdx*dayW+dayW/2)+'px"></div></div></div></div>';
 }
 
 function renderTravel(rows) {
