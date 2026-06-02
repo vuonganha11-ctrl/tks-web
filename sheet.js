@@ -12,7 +12,7 @@
   // Dựng URL gviz cho 1 tab
   function gvizUrl(sheetId, tab) {
     return "https://docs.google.com/spreadsheets/d/" + sheetId +
-      "/gviz/tq?tqx=out:json&headers=1&sheet=" + encodeURIComponent(tab);
+      "/gviz/tq?tqx=out:csv&headers=1&sheet=" + encodeURIComponent(tab);
   }
 
   // Bóc lớp vỏ "/*O_o*/ google.visualization.Query.setResponse(...);"
@@ -45,12 +45,41 @@
   }
 
   // Đọc 1 tab -> mảng object. Trả về [] nếu lỗi (để caller fallback dữ liệu mẫu).
+  // CSV reader (RFC4180) - moi gia tri la CHUOI, tranh bay suy luan kieu cua gviz JSON
+  function parseCsv(text){
+    text=String(text||"");
+    if(text.charCodeAt(0)===65279)text=text.slice(1);
+    var Q=String.fromCharCode(34),CR=String.fromCharCode(13),LF=String.fromCharCode(10);
+    var rows=[],row=[],f="",i=0,q=false,ch;
+    while(i<text.length){ch=text[i];
+      if(q){if(ch===Q){if(text[i+1]===Q){f+=Q;i+=2;continue;}q=false;i++;continue;}f+=ch;i++;continue;}
+      if(ch===Q){q=true;i++;continue;}
+      if(ch===","){row.push(f);f="";i++;continue;}
+      if(ch===CR){i++;continue;}
+      if(ch===LF){row.push(f);rows.push(row);row=[];f="";i++;continue;}
+      f+=ch;i++;
+    }
+    if(f!==""||row.length){row.push(f);rows.push(row);}
+    return rows;
+  }
+  function csvToRows(csvText){
+    var m=parseCsv(csvText);if(!m.length)return [];
+    var cols=m[0].map(function(h,i){return (h&&h.trim())||("col"+i);});
+    var out=[];
+    for(var r=1;r<m.length;r++){var cells=m[r];
+      if(cells.every(function(x){return x==null||x==="";}))continue;
+      var obj={};
+      for(var k=0;k<cols.length;k++){var key=cols[k];var val=cells[k]!=null?cells[k]:"";obj[key]=val;obj["_f_"+key]=val;}
+      out.push(obj);}
+    return out;
+  }
+  
   async function fetchTab(sheetId, tab) {
     var url = gvizUrl(sheetId, tab);
     var res = await fetch(url, { cache: "no-store" });
     if (!res.ok) throw new Error("HTTP " + res.status + " khi đọc tab " + tab);
     var text = await res.text();
-    return tableToRows(parseGviz(text));
+    return csvToRows(text);
   }
 
   // Đọc nhiều tab cùng lúc -> { tabName: rows[] }
