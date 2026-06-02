@@ -38,13 +38,13 @@ body{
   font-size:11px;color:#9fc0e6;font-weight:600}
 .hero h1{font-family:'Saira Condensed',sans-serif;font-weight:800;font-size:42px;line-height:1.02;
   text-transform:uppercase;margin:8px 0 4px}
-.hero .cust{font-size:15px;color:#cfe0f2;font-weight:500;max-width:70%}
+.hero .cust{font-size:15px;color:#cfe0f2;font-weight:500}
 .hero .codeline{margin-top:14px;display:flex;gap:8px;flex-wrap:wrap}
 .chip{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;
   background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.22);
   padding:5px 11px;border-radius:999px;color:#eaf2fb}
 .chip a{color:#bcd6f3;text-decoration:none}
-.hero .right{position:absolute;top:28px;right:30px;text-align:right}
+.hero .right{position:absolute;top:28px;right:30px;text-align:right}.hwrap2{display:flex;gap:24px;align-items:flex-start}.hleft{flex:1;min-width:0}.hright{flex:0 0 auto;display:flex;flex-direction:column;align-items:flex-end;gap:9px;text-align:right}.hlogos{display:flex;gap:8px;margin-bottom:2px}.hlogos img{width:46px;height:46px;border-radius:11px;background:#fff;padding:5px;object-fit:contain;box-shadow:0 2px 6px rgba(0,0,0,.18)}.hmeta{font-size:10.5px;color:#9fc0e6;text-transform:uppercase;letter-spacing:.16em;font-weight:600;line-height:1.55}.hmeta b{display:block;font-family:'Saira Condensed',sans-serif;font-weight:800;font-size:18px;letter-spacing:.02em;color:#fff;text-transform:none}.hupd b{font-size:21px}@media(max-width:640px){.hwrap2{flex-direction:column}.hright{align-items:flex-start;text-align:left}}
 .badge-stage{display:inline-block;background:var(--amber);color:#241500;font-weight:700;
   font-size:12px;letter-spacing:.04em;padding:7px 14px;border-radius:999px;text-transform:uppercase}
 .hero .total{margin-top:14px}
@@ -233,23 +233,25 @@ const byOrder = rows => rows.filter(r => String(r.order_id).trim() === ORDER);
 
 /* ---------- renderers ---------- */
 function rHero(info){
-  const chips=[];
-  if(info.bao_gia)  chips.push(`<span class="chip">📄 ${esc(info.bao_gia)}</span>`);
-  if(info.ma_crm)   chips.push(`<span class="chip">🧾 CRM #${esc(info.ma_crm)} · <a href="https://thaikhuong.getflycrm.com/#/crm/order/detail/${esc(info.ma_crm)}" target="_blank">mở đơn</a></span>`);
-  if(info.task_tong)chips.push(`<span class="chip">✅ Task ${esc(info.task_tong)} · <a href="https://thaikhuong.getflycrm.com/#tasks/?task_id=${esc(info.task_tong)}" target="_blank">mở task</a></span>`);
-  if(info.chat_url) chips.push(`<span class="chip">💬 <a href="${esc(info.chat_url)}" target="_blank">Google Chat</a></span>`);
-  const stepNm=(STEPS.find(s=>s.n===String(info.buoc))||{}).nm||'';
-  return `<div class="hero">
-    <div class="kick">Bảng theo dõi đơn hàng</div>
-    <h1>${esc(info.kh||'')}${info.du_an?' · '+esc(info.du_an):''}</h1>
-    <div class="cust">${esc(info.mo_ta||info.dia_chi||'')}</div>
-    <div class="codeline">${chips.join('')}</div>
-    <div class="right">
-      ${info.buoc?`<span class="badge-stage">▶ Bước ${esc(info.buoc)}${stepNm?' · '+esc(stepNm):''}</span>`:''}
-      ${info.task_tong?`<div class="total"><div class="lbl">ID Task tổng</div><div class="val mono">#${esc(info.task_tong)}</div></div>`:''}
-    </div>
-  </div>`;
+  var chips=[];
+  if(info.bao_gia)  chips.push('<span class="chip">📄 '+esc(info.bao_gia)+'</span>');
+  if(info.ma_crm)   chips.push('<span class="chip">🧾 CRM #'+esc(info.ma_crm)+' · <a href="https://thaikhuong.getflycrm.com/#/crm/order/detail/'+esc(info.ma_crm)+'" target="_blank">mở đơn</a></span>');
+  if(info.task_tong)chips.push('<span class="chip">✅ Task '+esc(info.task_tong)+' · <a href="https://thaikhuong.getflycrm.com/#tasks/?task_id='+esc(info.task_tong)+'" target="_blank">mở task</a></span>');
+  if(info.chat_url) chips.push('<span class="chip">💬 <a href="'+esc(info.chat_url)+'" target="_blank">Google Chat</a></span>');
+  var stepNm=(STEPS.find(function(s){return s.n===String(info.buoc);})||{}).nm||'';
+  var right='<div class="hright"><div class="hlogos"><img src="assets/logo-1.png" alt="TKT"><img src="assets/logo-2.png" alt="TKS"></div>';
+  if(info.buoc) right+='<span class="badge-stage">▶ Bước '+esc(info.buoc)+(stepNm?' · '+esc(stepNm):'')+'</span>';
+  if(info.task_tong) right+='<div class="hmeta">ID Task tổng <b class="mono">#'+esc(info.task_tong)+'</b></div>';
+  if(info.cap_nhat) right+='<div class="hmeta hupd">Cập nhật <b>'+esc(info.cap_nhat)+'</b></div>';
+  right+='</div>';
+  return '<div class="hero"><div class="hwrap2"><div class="hleft">'+
+    '<div class="kick">Bảng theo dõi đơn hàng</div>'+
+    '<h1>'+esc(info.kh||'')+(info.du_an?' · '+esc(info.du_an):'')+'</h1>'+
+    '<div class="cust">'+esc(info.mo_ta||info.dia_chi||'')+'</div>'+
+    '<div class="codeline">'+chips.join('')+'</div>'+
+    '</div>'+right+'</div></div>';
 }
+
 function rPipe(info){
   const warn = String(info.canh_bao||'').match(/^(1|true|x|có|co|y)$/i);
   const steps = STEPS.slice();
