@@ -395,7 +395,7 @@ function rGantt(info, rows){
       rHero(infoRow) + rPipe(infoRow) + rGantt(infoRow, byOrder(gantt)) + rTree(infoRow, byOrder(congviec)) +
       rTodo(byOrder(todo)) + rTimeline(byOrder(timeline)) + rKey(infoRow) +
       rHangMuc(byOrder(hangmuc)) + rPay(infoRow) + rDocs(byOrder(hoso)) +
-      `<footer>Nguồn: ${esc(infoRow.nguon||'Getfly CRM · Google Chat')} (đơn ${esc(ORDER)}${infoRow.task_tong?', Task '+esc(infoRow.task_tong):''}).${infoRow.cap_nhat?' Cập nhật '+esc(infoRow.cap_nhat)+'.':''}<br>Dữ liệu đọc trực tiếp từ Google Sheet TKS-Web-Data.</footer>`;
+      `<footer>THAI KHUONG SERVICE - Full services for industrial pumps</footer>`;
     document.getElementById('loading').style.display='none';
     document.getElementById('app').style.display='block';
   }catch(e){
