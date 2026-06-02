@@ -7,12 +7,381 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Saira:wght@400;500;600;700&family=Saira+Condensed:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="order.css">
+<style>
+:root{
+  --navy:#0f2742; --navy2:#173a5e; --steel:#3d6695; --ice:#e8eef5; --ice2:#f4f7fb;
+  --amber:#e08a00; --amber-soft:#fbeccd; --green:#2f7d4f; --green-soft:#e0f0e6;
+  --red:#c0392b; --red-soft:#fbe5e2; --grey:#6b7a8d; --line:#d6dee8; --ink:#16202c;
+  --shadow:0 1px 2px rgba(15,39,66,.06), 0 8px 24px rgba(15,39,66,.08);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  font-family:'IBM Plex Sans',sans-serif;color:var(--ink);
+  background:
+    radial-gradient(1200px 500px at 80% -10%, rgba(61,102,149,.10), transparent 60%),
+    linear-gradient(180deg,#eef3f8 0%, #e6edf4 100%);
+  background-attachment:fixed;line-height:1.5;padding:28px 18px 70px;
+}
+.wrap{max-width:1180px;margin:0 auto}
+.mono{font-variant-numeric:tabular-nums}
+.disp{font-family:'Saira Condensed',sans-serif;letter-spacing:.01em}
+
+/* ---------- HEADER ---------- */
+.hero{
+  background:linear-gradient(135deg,var(--navy) 0%, var(--navy2) 60%, #1d456e 100%);
+  color:#fff;border-radius:18px;padding:30px 34px;position:relative;overflow:hidden;
+  box-shadow:var(--shadow);
+}
+.hero::after{content:"";position:absolute;inset:0;opacity:.10;
+  background-image:repeating-linear-gradient(45deg,#fff 0 1px,transparent 1px 13px);pointer-events:none}
+.hero .kick{font-family:'Saira',sans-serif;text-transform:uppercase;letter-spacing:.28em;
+  font-size:11px;color:#9fc0e6;font-weight:600}
+.hero h1{font-family:'Saira Condensed',sans-serif;font-weight:800;font-size:42px;line-height:1.02;
+  text-transform:uppercase;margin:8px 0 4px}
+.hero .cust{font-size:15px;color:#cfe0f2;font-weight:500;max-width:70%}
+.hero .codeline{margin-top:14px;display:flex;gap:8px;flex-wrap:wrap}
+.chip{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;
+  background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.22);
+  padding:5px 11px;border-radius:999px;color:#eaf2fb}
+.chip a{color:#bcd6f3;text-decoration:none}
+.hero .right{position:absolute;top:28px;right:30px;text-align:right}
+.badge-stage{display:inline-block;background:var(--amber);color:#241500;font-weight:700;
+  font-size:12px;letter-spacing:.04em;padding:7px 14px;border-radius:999px;text-transform:uppercase}
+.hero .total{margin-top:14px}
+.hero .total .lbl{font-size:11px;color:#9fc0e6;text-transform:uppercase;letter-spacing:.18em;font-weight:600}
+.hero .total .val{font-family:'Saira Condensed',sans-serif;font-weight:800;font-size:34px;line-height:1}
+
+/* ---------- LAYOUT ---------- */
+section{margin-top:26px}
+.sec-h{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.sec-h .no{font-family:'Saira Condensed',sans-serif;font-weight:800;font-size:13px;color:#fff;
+  background:var(--steel);width:26px;height:26px;border-radius:7px;display:grid;place-items:center}
+.sec-h h2{font-family:'Saira Condensed',sans-serif;text-transform:uppercase;font-weight:700;
+  font-size:21px;letter-spacing:.02em;color:var(--navy)}
+.sec-h .line{flex:1;height:1px;background:linear-gradient(90deg,var(--line),transparent)}
+.card{background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow)}
+.pad{padding:20px 22px}
+
+/* ---------- PIPELINE ---------- */
+.pipe{display:flex;gap:0;overflow-x:auto;padding:6px 2px}
+.step{flex:1 0 auto;min-width:72px;text-align:center;position:relative;padding:0 4px}
+.step .bar{height:7px;border-radius:6px;background:var(--ice);margin:18px 0 12px}
+.step.done .bar{background:var(--green)}
+.step.now .bar{background:var(--amber)}
+.step.warn .bar{background:repeating-linear-gradient(45deg,var(--red) 0 6px,#e57368 6px 12px)}
+.step .dot{position:absolute;top:11px;left:50%;transform:translateX(-50%);
+  width:21px;height:21px;border-radius:50%;background:#fff;border:3px solid var(--ice);z-index:2}
+.step.done .dot{border-color:var(--green);background:var(--green)}
+.step.now .dot{border-color:var(--amber);background:#fff;box-shadow:0 0 0 4px var(--amber-soft)}
+.step .num{font-family:'Saira Condensed',sans-serif;font-weight:700;font-size:12px;color:var(--grey)}
+.step.done .num,.step.now .num{color:var(--navy)}
+.step .nm{font-size:10.5px;color:var(--grey);font-weight:500;line-height:1.25;margin-top:2px}
+.step.now .nm{color:var(--amber);font-weight:700}
+.legend{display:flex;gap:18px;flex-wrap:wrap;margin-top:8px;font-size:12px;color:var(--grey)}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+.note{font-size:12px;color:var(--grey);background:var(--amber-soft);border:1px solid #e7cf98;
+  border-radius:10px;padding:11px 14px;margin-top:14px}
+
+/* ---------- KEY GRID ---------- */
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
+.kv{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px 16px;box-shadow:var(--shadow)}
+.kv .k{font-size:10.5px;text-transform:uppercase;letter-spacing:.12em;color:var(--steel);font-weight:700}
+.kv .v{font-size:15px;font-weight:600;margin-top:4px;color:var(--ink)}
+.kv .v small{display:block;font-weight:400;font-size:12.5px;color:var(--grey);margin-top:2px}
+.kv.flag{border-left:4px solid var(--amber);background:linear-gradient(90deg,var(--amber-soft),#fff 40%)}
+
+/* ---------- TABLES ---------- */
+table{width:100%;border-collapse:collapse;font-size:13px}
+thead th{background:var(--navy);color:#fff;font-family:'Saira',sans-serif;font-weight:600;
+  text-align:left;padding:11px 13px;font-size:12px;letter-spacing:.03em;text-transform:uppercase}
+tbody td{padding:11px 13px;border-bottom:1px solid var(--line);vertical-align:top}
+tbody tr:nth-child(even){background:var(--ice2)}
+tbody tr:hover{background:#eef4fb}
+.num-r{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.model{font-family:'Saira Condensed',sans-serif;font-weight:700;color:var(--navy);font-size:14px}
+.spec{font-size:12px;color:var(--grey);line-height:1.45}
+tr.unit td{background:var(--ice)!important;color:var(--navy);font-weight:700;
+  font-family:'Saira Condensed',sans-serif;font-size:14px;letter-spacing:.02em;text-transform:uppercase}
+.bo-phan{font-weight:700;color:var(--steel);white-space:nowrap}
+.tag{display:inline-block;font-size:11px;font-weight:700;padding:3px 9px;border-radius:6px;white-space:nowrap}
+.t-done{background:var(--green-soft);color:var(--green)}
+.t-now{background:var(--amber-soft);color:#9a5b00}
+.t-wait{background:var(--ice);color:var(--grey)}
+.t-warn{background:var(--red-soft);color:var(--red)}
+
+/* ---------- PAYMENT ---------- */
+.pay{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px}
+.pcard{border-radius:12px;padding:18px;color:#fff}
+.pcard .l{font-size:11px;text-transform:uppercase;letter-spacing:.14em;opacity:.85;font-weight:600}
+.pcard .n{font-family:'Saira Condensed',sans-serif;font-weight:800;font-size:30px;margin-top:6px;line-height:1}
+.pcard.due{background:linear-gradient(135deg,#173a5e,#2c5a8a)}
+.pcard.paid{background:linear-gradient(135deg,#2f7d4f,#3a9b62)}
+.pcard.left{background:linear-gradient(135deg,#a5301f,#c0392b)}
+.pbar{height:14px;border-radius:999px;background:var(--ice);overflow:hidden;margin-top:14px;border:1px solid var(--line)}
+.pbar > i{display:block;height:100%;width:0%;background:var(--green)}
+
+/* ---------- TODO ---------- */
+.todo{list-style:none}
+.todo li{display:flex;gap:12px;align-items:flex-start;padding:13px 0;border-bottom:1px solid var(--line)}
+.todo li:last-child{border-bottom:none}
+.todo .pr{font-size:10px;font-weight:700;padding:3px 8px;border-radius:5px;white-space:nowrap;margin-top:2px}
+.pr-hi{background:var(--red-soft);color:var(--red)} .pr-md{background:var(--amber-soft);color:#9a5b00} .pr-lo{background:var(--ice);color:var(--grey)}
+.todo .who{font-size:12px;color:var(--steel);font-weight:600}
+
+/* ---------- TREE (việc đang làm) ---------- */
+.viec-cap{font-size:12px;color:#7a5a00;background:var(--amber-soft);border:1px solid #e7cf98;border-radius:9px;padding:9px 13px;margin-bottom:12px}
+.tree{background:#fff;border:1px solid var(--line);border-radius:14px;padding:8px 8px;box-shadow:0 6px 18px rgba(15,39,66,.08)}
+.tnode{display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:10px}
+.tparent{background:var(--navy);color:#fff;font-family:'Saira Condensed',sans-serif;font-weight:800;font-size:15px;letter-spacing:.02em;text-transform:uppercase}
+.tparent a{color:#ffd27a;text-decoration:none}
+.tchild{position:relative;margin-left:28px;border-bottom:1px solid var(--line)}
+.tchild.lvl2{margin-left:52px}
+.tchild.lvl3{margin-left:76px}
+.tchild:last-child{border-bottom:none}
+.tchild::before{content:"";position:absolute;left:-15px;top:-1px;height:50%;width:13px;border-left:2px solid var(--line);border-bottom:2px solid var(--line);border-bottom-left-radius:7px}
+.tico{width:23px;height:23px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:800;color:#fff;flex:0 0 auto}
+.i-done{background:var(--green)}.i-doing{background:var(--amber)}.i-todo{background:#c2cdda;color:#5a6b7e}
+.tname{flex:1;font-size:13.5px;font-weight:600;color:var(--ink)}
+.tstat{font-size:11px;font-weight:700;padding:3px 9px;border-radius:999px;white-space:nowrap}
+.s-done{background:var(--green-soft);color:var(--green)}.s-doing{background:var(--amber-soft);color:#9a5b00}.s-todo{background:var(--ice);color:var(--grey)}
+.tbar{width:80px;height:8px;border-radius:999px;background:var(--ice);overflow:hidden;flex:0 0 auto}
+.tbar>i{display:block;height:100%}
+.tid-link{font-family:'Saira Condensed',sans-serif;font-weight:800;font-size:13px;background:var(--navy);color:#fff!important;padding:3px 9px;border-radius:7px;text-decoration:none;white-space:nowrap;flex:0 0 auto}
+.tid-link:hover{background:var(--amber);color:#241500!important}
+
+/* ---------- TIMELINE ---------- */
+.track-h{display:flex;align-items:center;gap:9px;font-family:'Saira Condensed',sans-serif;font-weight:800;
+  text-transform:uppercase;font-size:15px;letter-spacing:.04em;color:var(--navy);
+  margin-bottom:14px;padding-bottom:9px;border-bottom:2px solid var(--line)}
+.track-h .ic{width:26px;height:26px;border-radius:7px;display:grid;place-items:center;color:#fff;font-size:14px}
+.track-h small{font-weight:500;font-size:11px;color:var(--grey);text-transform:none;letter-spacing:0}
+.tl{position:relative;padding-left:26px}
+.tl::before{content:"";position:absolute;left:7px;top:4px;bottom:4px;width:2px;background:var(--line)}
+.tl .ev{position:relative;padding:0 0 16px}
+.tl .ev::before{content:"";position:absolute;left:-23px;top:4px;width:11px;height:11px;border-radius:50%;
+  background:#fff;border:3px solid var(--steel)}
+.tl .ev:last-child::before{border-color:var(--amber);background:var(--amber)}
+.tl .d{font-family:'Saira Condensed',sans-serif;font-weight:700;color:var(--navy);font-size:14px}
+.tl .x{font-size:13px;color:var(--ink);margin-top:1px}
+.tl.crm .ev::before{border-color:var(--steel)}
+.tl.crm .ev:last-child::before{border-color:var(--navy);background:var(--navy)}
+.tl.chat::before{background:#cfe0f5}
+.tl.chat .ev::before{border-color:#1a73e8}
+.tl.chat .ev:last-child::before{border-color:var(--amber);background:var(--amber)}
+.tl.chat .d{color:#1557b0}
+
+footer{margin-top:30px;text-align:center;font-size:12px;color:var(--grey)}
+.muted{color:var(--grey);font-style:italic;font-size:13px;padding:6px 2px}
+
+/* ---------- STATE ---------- */
+#loading,#error{max-width:1180px;margin:60px auto;text-align:center;color:var(--grey);font-size:15px}
+#error{color:var(--red)}
+.spin{display:inline-block;width:18px;height:18px;border:3px solid var(--ice);border-top-color:var(--steel);
+  border-radius:50%;animation:sp .8s linear infinite;vertical-align:-4px;margin-right:8px}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+@media (max-width:760px){.cols{grid-template-columns:1fr!important}}
+@media (max-width:560px){.hero h1{font-size:30px}.hero .right{position:static;text-align:left;margin-top:16px}.hero .cust{max-width:100%}}
+@media print{body{background:#fff;padding:0}.card,.kv,.hero{box-shadow:none}}
+</style>
 </head>
 <body>
-<div class="wrap" id="app"></div>
-<script src="config.js"></script>
-<script src="sheet.js"></script>
-<script src="order.js"></script>
+<div id="loading"><span class="spin"></span> Đang tải dữ liệu đơn hàng…</div>
+<div id="error" style="display:none"></div>
+<div class="wrap" id="app" style="display:none"></div>
+
+<script>
+/* ============================================================
+   Trang theo dõi đơn hàng (ĐỘNG) — đọc TKS-Web-Data qua gviz,
+   lọc theo order_id (?order=<id> hoặc ?id=<id>).
+   Mỗi đơn = các dòng cùng order_id trong DonHang + DH_*.
+   ============================================================ */
+const SHEET_ID = '1Hk49-OXujQCHanrYUaAyhc9kDNAi6gYker1f1_44p2Q';
+
+/* Pipeline chuẩn (theo mẫu). 'warn' chỉ hiện khi DH_Info.canh_bao bật. */
+const STEPS = [
+  {n:'0',  nm:'Tạo đơn'},      {n:'1',  nm:'PO / Hợp đồng'}, {n:'2',  nm:'Tạm ứng'},
+  {n:'3a', nm:'Mua hàng'},     {n:'3b', nm:'Khai hải quan'}, {n:'3c', nm:'Về kho'},
+  {n:'4',  nm:'Lắp đặt'},      {n:'5a', nm:'Sẵn sàng giao'}, {n:'5b', nm:'Đang giao'},
+  {n:'5c', nm:'Giao xong'},    {n:'6',  nm:'Nghiệm thu'},    {n:'7',  nm:'TT đợt cuối'}
+];
+
+const qp = n => new URLSearchParams(location.search).get(n) || '';
+const ORDER = (qp('order') || qp('id') || (location.hash.match(/order=([^&]+)/)||[])[1] || '').trim();
+
+const esc = s => String(s==null?'':s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function cleanVal(v){
+  if(v==null) return '';
+  if(typeof v==='string'){
+    const m=v.match(/^Date\((\d+),(\d+),(\d+)/);
+    if(m){const d=new Date(+m[1],+m[2],+m[3]);return ('0'+d.getDate()).slice(-2)+'/'+('0'+(d.getMonth()+1)).slice(-2)+'/'+d.getFullYear();}
+  }
+  return v;
+}
+function fmtMoney(v){const n=Number(String(v).replace(/[^\d.-]/g,''));return isNaN(n)?(v||'0'):n.toLocaleString('vi-VN');}
+
+async function gviz(tab){
+  const url=`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&headers=1&sheet=${encodeURIComponent(tab)}`;
+  const txt=await (await fetch(url)).text();
+  const json=JSON.parse(txt.substring(txt.indexOf('{'), txt.lastIndexOf('}')+1));
+  const cols=(json.table.cols||[]).map(c=>(c.label||c.id||'').trim());
+  return (json.table.rows||[]).map(r=>{
+    const o={}; (r.c||[]).forEach((cell,i)=>{ o[cols[i]] = cell ? cleanVal(cell.v) : ''; }); return o;
+  });
+}
+const byOrder = rows => rows.filter(r => String(r.order_id).trim() === ORDER);
+
+/* ---------- renderers ---------- */
+function rHero(info){
+  const chips=[];
+  if(info.bao_gia)  chips.push(`<span class="chip">📄 ${esc(info.bao_gia)}</span>`);
+  if(info.ma_crm)   chips.push(`<span class="chip">🧾 CRM #${esc(info.ma_crm)} · <a href="https://thaikhuong.getflycrm.com/#/crm/order/detail/${esc(info.ma_crm)}" target="_blank">mở đơn</a></span>`);
+  if(info.task_tong)chips.push(`<span class="chip">✅ Task ${esc(info.task_tong)} · <a href="https://thaikhuong.getflycrm.com/#tasks/?task_id=${esc(info.task_tong)}" target="_blank">mở task</a></span>`);
+  if(info.chat_url) chips.push(`<span class="chip">💬 <a href="${esc(info.chat_url)}" target="_blank">Google Chat</a></span>`);
+  const stepNm=(STEPS.find(s=>s.n===String(info.buoc))||{}).nm||'';
+  return `<div class="hero">
+    <div class="kick">Bảng theo dõi đơn hàng</div>
+    <h1>${esc(info.kh||'')}${info.du_an?' · '+esc(info.du_an):''}</h1>
+    <div class="cust">${esc(info.mo_ta||info.dia_chi||'')}</div>
+    <div class="codeline">${chips.join('')}</div>
+    <div class="right">
+      ${info.buoc?`<span class="badge-stage">▶ Bước ${esc(info.buoc)}${stepNm?' · '+esc(stepNm):''}</span>`:''}
+      ${info.task_tong?`<div class="total"><div class="lbl">ID Task tổng</div><div class="val mono">#${esc(info.task_tong)}</div></div>`:''}
+    </div>
+  </div>`;
+}
+function rPipe(info){
+  const warn = String(info.canh_bao||'').match(/^(1|true|x|có|co|y)$/i);
+  const steps = STEPS.slice();
+  if(warn){ const i=steps.findIndex(s=>s.n==='3a'); steps.splice(i+1,0,{n:'⚠',nm:info.canh_bao_nm||'Hàng trễ chú ý',warn:true}); }
+  const curIdx = steps.findIndex(s=>s.n===String(info.buoc));
+  const cells = steps.map((s,i)=>{
+    let cls=''; if(s.warn) cls='warn'; else if(curIdx>=0&&i<curIdx) cls='done'; else if(i===curIdx) cls='now';
+    return `<div class="step ${cls}"><div class="bar"></div><div class="dot"></div><div class="num">${esc(s.n)}</div><div class="nm">${esc(s.nm)}</div></div>`;
+  }).join('');
+  return `<section><div class="sec-h"><span class="no">▣</span><h2>Tiến độ xử lý</h2><span class="line"></span></div>
+    <div class="card pad"><div class="pipe">${cells}</div>
+    <div class="legend"><span><i style="background:var(--green)"></i>Hoàn tất</span><span><i style="background:var(--amber)"></i>Đang ở đây</span><span><i style="background:#e57368"></i>Cảnh báo trễ</span><span><i style="background:var(--ice)"></i>Chưa tới</span></div>
+    ${info.note?`<div class="note">⏱ ${esc(info.note)}</div>`:''}
+  </div></section>`;
+}
+function rTree(info, rows){
+  const ico={done:'i-done',doing:'i-doing',todo:'i-todo'}, mk={done:'✓',doing:'◐',todo:'○'}, sc={done:'s-done',doing:'s-doing',todo:'s-todo'}, sn={done:'Hoàn thành',doing:'Đang tiến hành',todo:'Chưa làm'};
+  const kind=r=>{const t=(r.trang_thai||'').toLowerCase();if(/done|hoàn|xong/.test(t))return'done';if(/doing|đang|tiến/.test(t))return'doing';return'todo';};
+  const lvl=r=>{const c=(r.cap||'').toLowerCase();if(/chắt|chat|3/.test(c))return'lvl3';if(/cháu|chau|2/.test(c))return'lvl2';return'';};
+  const parent=`<div class="tnode tparent">🗂 ${info.order_id?'DH'+esc(info.order_id):''} ${info.kh?'| '+esc(info.kh):''} — Task tổng${info.task_tong?` · <a href="https://thaikhuong.getflycrm.com/#tasks/?task_id=${esc(info.task_tong)}" target="_blank">#${esc(info.task_tong)}</a>`:''}</div>`;
+  const kids = rows.length ? rows.map(r=>{
+    const k=kind(r), pct=Number(String(r.pct).replace(/[^\d.]/g,''))||0;
+    const bcol=k==='done'?'var(--green)':k==='doing'?'var(--amber)':'#c2cdda';
+    return `<div class="tnode tchild ${lvl(r)}"><span class="tico ${ico[k]}">${mk[k]}</span>${r.task_id?`<a class="tid-link" href="https://thaikhuong.getflycrm.com/#tasks/?task_id=${esc(r.task_id)}" target="_blank">#${esc(r.task_id)}</a>`:''}<span class="tname">${esc(r.ten)}</span><span class="tstat ${sc[k]}">${sn[k]}</span><span class="tbar"><i style="width:${pct}%;background:${bcol}"></i></span></div>`;
+  }).join('') : '';
+  const cap = rows.length ? '' : `<div class="viec-cap">Đơn này chưa có việc con trên CRM. Khi tạo việc con (có ID Task), chúng sẽ hiển thị ở đây.</div>`;
+  return `<section><div class="sec-h"><span class="no">☑</span><h2>Việc đang làm</h2><span class="line"></span></div>${cap}<div class="tree">${parent}${kids}</div></section>`;
+}
+function rTodo(rows){
+  if(!rows.length) return '';
+  const prc={hi:'pr-hi',md:'pr-md',lo:'pr-lo'}, prn={hi:'CAO',md:'TB',lo:'DÕI'};
+  const pk=r=>{const u=(r.uu_tien||'').toLowerCase();if(/hi|cao|high/.test(u))return'hi';if(/lo|dõi|doi|low/.test(u))return'lo';return'md';};
+  const items=rows.map(r=>{const k=pk(r);return `<li><span class="pr ${prc[k]}">${prn[k]}</span><div>${esc(r.noi_dung)}${r.who?`<div class="who">${esc(r.who)}</div>`:''}</div></li>`;}).join('');
+  return `<section><div class="sec-h"><span class="no">✓</span><h2>Việc cần làm</h2><span class="line"></span></div><div class="card pad"><ul class="todo">${items}</ul></div></section>`;
+}
+function rTimeline(rows){
+  const crm=rows.filter(r=>/crm|getfly/i.test(r.nguon)), chat=rows.filter(r=>/chat/i.test(r.nguon));
+  const ev=arr=>arr.length?arr.map(r=>`<div class="ev"><div class="d">${esc(r.dt)}</div><div class="x">${esc(r.noi_dung)}</div></div>`).join(''):'<div class="muted">Chưa có dữ liệu.</div>';
+  return `<section><div class="sec-h"><span class="no">↳</span><h2>Diễn biến chính — theo nguồn</h2><span class="line"></span></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px" class="cols">
+      <div class="card pad"><div class="track-h"><span class="ic" style="background:var(--navy)">🗂</span> Getfly CRM <small>· mốc chính thức</small></div><div class="tl crm">${ev(crm)}</div></div>
+      <div class="card pad"><div class="track-h"><span class="ic" style="background:#1a73e8">💬</span> Google Chat <small>· diễn biến trao đổi</small></div><div class="tl chat">${ev(chat)}</div></div>
+    </div></section>`;
+}
+function rKey(info){
+  const kv=(k,v,s,flag)=> v?`<div class="kv${flag?' flag':''}"><div class="k">${esc(k)}</div><div class="v">${esc(v)}${s?`<small>${esc(s)}</small>`:''}</div></div>`:'';
+  const cards=[
+    kv('Khách hàng', info.kh, info.dia_chi),
+    kv('Liên hệ nhận hàng', info.lien_he, info.lien_he_meta),
+    kv('Sales / Mua hàng', info.sales, info.mua_hang?('Mua hàng: '+info.mua_hang):''),
+    kv('Nhà cung cấp', info.ncc, info.ncc_meta),
+    kv('Trạng thái đơn', info.trang_thai, info.trang_thai_meta),
+    kv('Hạn giao hàng', info.han_giao, [info.bao_hanh?('Bảo hành '+info.bao_hanh):'',info.hinh_thuc_tt].filter(Boolean).join(' · '), true)
+  ].join('');
+  return `<section><div class="sec-h"><span class="no">i</span><h2>Thông tin chính</h2><span class="line"></span></div><div class="grid">${cards}</div></section>`;
+}
+function rHangMuc(rows){
+  if(!rows.length) return '';
+  /* Nhóm theo cụm (stt + nhom). Không có cột tiền. Liệt kê đầy đủ bộ phận. */
+  const groups={}; const order=[];
+  rows.forEach(r=>{const key=String(r.stt||r.nhom||'0');if(!groups[key]){groups[key]=[];order.push(key);}groups[key].push(r);});
+  let body='';
+  order.forEach(key=>{
+    const items=groups[key]; const head=items[0].nhom||items[0].model||('Mục '+key);
+    body+=`<tr class="unit"><td colspan="5">${esc(head)}</td></tr>`;
+    items.forEach(r=>{
+      body+=`<tr>
+        <td class="bo-phan">${esc(r.bo_phan||'—')}</td>
+        <td><span class="model">${esc(r.model||'')}</span></td>
+        <td class="spec">${esc(r.thong_so||'')}</td>
+        <td class="num-r">${esc(r.sl||'')} ${esc(r.dvt||'')}</td>
+        <td class="spec">${esc(r.ghi_chu||'')}</td>
+      </tr>`;
+    });
+  });
+  return `<section><div class="sec-h"><span class="no">⚙</span><h2>Hạng mục đơn hàng</h2><span class="line"></span></div>
+    <div class="card" style="overflow:hidden"><table>
+      <thead><tr><th style="width:150px">Cụm / Bộ phận</th><th style="width:200px">Model / Mã</th><th>Thông số</th><th style="width:90px">SL</th><th>Ghi chú</th></tr></thead>
+      <tbody>${body}</tbody></table></div></section>`;
+}
+function rPay(info){
+  const due=Number(String(info.phai_thu).replace(/[^\d.-]/g,''))||0;
+  const paid=Number(String(info.da_thu).replace(/[^\d.-]/g,''))||0;
+  const left=due-paid; const pct=due?Math.round(paid/due*100):0;
+  return `<section><div class="sec-h"><span class="no">₫</span><h2>Thanh toán</h2><span class="line"></span></div>
+    <div class="card pad"><div class="pay">
+      <div class="pcard due"><div class="l">Phải thu</div><div class="n mono">${fmtMoney(due)}</div></div>
+      <div class="pcard paid"><div class="l">Đã thu</div><div class="n mono">${fmtMoney(paid)}</div></div>
+      <div class="pcard left"><div class="l">Còn lại</div><div class="n mono">${fmtMoney(left)}</div></div>
+    </div>
+    <div class="pbar"><i style="width:${pct}%"></i></div>
+    <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--grey);margin-top:6px"><span>Đã thu ${pct}%</span><span>${esc(info.tt_note||'')}</span></div>
+  </div></section>`;
+}
+function rDocs(rows){
+  if(!rows.length) return '';
+  const tcl=v=>{const t=(v||'').toLowerCase();if(/đã ký|done|duyệt|xong/.test(t))return't-done';if(/nháp|now|đang/.test(t))return't-now';if(/trễ|warn|lỗi/.test(t))return't-warn';return't-wait';};
+  const body=rows.map(r=>`<tr><td>${esc(r.ngay)}</td><td><b>${esc(r.tep)}</b></td><td><span class="tag ${tcl(r.loai_mau||r.loai)}">${esc(r.loai)}</span></td><td>${esc(r.ghi_chu)}</td></tr>`).join('');
+  return `<section><div class="sec-h"><span class="no">🗎</span><h2>Hồ sơ &amp; tài liệu</h2><span class="line"></span></div>
+    <div class="card" style="overflow:hidden"><table><thead><tr><th style="width:90px">Ngày</th><th>Tệp / Tài liệu</th><th style="width:170px">Loại</th><th>Ghi chú</th></tr></thead><tbody>${body}</tbody></table></div></section>`;
+}
+
+/* ---------- main ---------- */
+(async function(){
+  try{
+    if(!ORDER) throw new Error('Thiếu order_id. Mở trang với ?order=<mã đơn>, ví dụ ?order=5143');
+    const [donhang, info, congviec, todo, timeline, hangmuc, hoso] = await Promise.all([
+      gviz('DonHang'), gviz('DH_Info'), gviz('DH_CongViec'), gviz('DH_ToDo'),
+      gviz('DH_Timeline'), gviz('DH_HangMuc'), gviz('DH_HoSo')
+    ].map(p=>p.catch(()=>[])));
+    const infoRow = byOrder(info)[0] || byOrder(donhang)[0] || {};
+    if(!Object.keys(infoRow).length) throw new Error('Không tìm thấy đơn order_id = '+ORDER);
+    // bổ sung từ DonHang nếu DH_Info thiếu
+    const dh = byOrder(donhang)[0]||{};
+    ['kh','task_id','giai_doan'].forEach(k=>{ if(!infoRow[k]&&dh[k]) infoRow[k]=dh[k]; });
+    if(!infoRow.task_tong && dh.task_id) infoRow.task_tong = dh.task_id;
+    if(!infoRow.order_id) infoRow.order_id = ORDER;
+
+    document.title = `Theo dõi đơn — ${infoRow.kh||ORDER}`;
+    document.getElementById('app').innerHTML =
+      rHero(infoRow) + rPipe(infoRow) + rTree(infoRow, byOrder(congviec)) +
+      rTodo(byOrder(todo)) + rTimeline(byOrder(timeline)) + rKey(infoRow) +
+      rHangMuc(byOrder(hangmuc)) + rPay(infoRow) + rDocs(byOrder(hoso)) +
+      `<footer>Nguồn: ${esc(infoRow.nguon||'Getfly CRM · Google Chat')} (đơn ${esc(ORDER)}${infoRow.task_tong?', Task '+esc(infoRow.task_tong):''}).${infoRow.cap_nhat?' Cập nhật '+esc(infoRow.cap_nhat)+'.':''}<br>Dữ liệu đọc trực tiếp từ Google Sheet TKS-Web-Data.</footer>`;
+    document.getElementById('loading').style.display='none';
+    document.getElementById('app').style.display='block';
+  }catch(e){
+    document.getElementById('loading').style.display='none';
+    const el=document.getElementById('error'); el.style.display='block';
+    el.textContent='⚠ '+(e&&e.message?e.message:e);
+  }
+})();
+</script>
 </body>
 </html>
