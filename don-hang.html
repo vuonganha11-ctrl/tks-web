@@ -352,13 +352,33 @@ function rDocs(rows){
     <div class="card" style="overflow:hidden"><table><thead><tr><th style="width:90px">Ngày</th><th>Tệp / Tài liệu</th><th style="width:170px">Loại</th><th>Ghi chú</th></tr></thead><tbody>${body}</tbody></table></div></section>`;
 }
 
+function rGantt(info, rows){
+  if(!rows.length) return '';
+  var months = String(info.gantt_months||'').split(',').map(function(s){return s.trim();}).filter(Boolean);
+  if(!months.length) return '';
+  var N = months.length;
+  var today = parseFloat(info.gantt_today);
+  var cm = {navy:'var(--navy)',steel:'var(--steel)',green:'var(--green)',amber:'var(--amber)',red:'var(--red)',grey:'#c2cdda'};
+  var head = '<div class="gh"><div class="gsp"></div><div class="gms">'+months.map(function(m){return '<div class="gm">'+esc(m)+'</div>';}).join('')+'</div></div>';
+  var body = rows.map(function(r){
+    var off=parseFloat(r.offset)||0, w=parseFloat(r.width)||1;
+    var col=cm[String(r.mau||'steel').toLowerCase()]||'var(--steel)';
+    var lp=Math.max(0,off)/N*100, wp=Math.min(w,N-off)/N*100;
+    var tl=isNaN(today)?'':'<div class="gtd" style="left:'+(today/N*100)+'%"></div>';
+    return '<div class="grw"><div class="glb">'+esc(r.pha||'')+(r.meta?'<small>'+esc(r.meta)+'</small>':'')+'</div><div class="gtk">'+tl+'<div class="gbar" style="left:'+lp+'%;width:'+wp+'%;background:'+col+'"><span>'+esc(r.meta||r.pha||'')+'</span></div></div></div>';
+  }).join('');
+  var note=isNaN(today)?'':'<div class="gnote">| Vạch đỏ = hôm nay</div>';
+  var css='<style>.gantt{padding:14px 16px;overflow-x:auto}.gh{display:flex;align-items:flex-end;margin-bottom:4px;min-width:560px}.gsp{width:220px;flex:0 0 220px}.gms{flex:1;display:flex}.gm{flex:1;text-align:center;font-size:10px;color:var(--grey);font-weight:600;border-left:1px solid var(--line);padding:2px 0}.grw{display:flex;align-items:center;border-bottom:1px solid var(--line);padding:8px 0;min-width:560px}.grw:last-child{border-bottom:none}.glb{width:220px;flex:0 0 220px;font-size:12px;font-weight:600;color:var(--ink);padding-right:12px;line-height:1.3}.glb small{display:block;font-weight:400;color:var(--grey);font-size:10.5px;margin-top:1px}.gtk{position:relative;flex:1;height:24px;background:var(--ice2);border-radius:6px;overflow:hidden}.gbar{position:absolute;top:3px;height:18px;border-radius:5px;display:flex;align-items:center;min-width:3px;box-shadow:0 1px 2px rgba(15,39,66,.15)}.gbar span{font-size:9.5px;color:#fff;font-weight:600;padding:0 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.gtd{position:absolute;top:0;bottom:0;width:2px;background:var(--red);z-index:3}.gnote{font-size:11px;color:var(--grey);font-weight:600;margin-top:8px;text-align:right}</style>';
+  return '<section>'+css+'<div class="sec-h"><span class="no">G</span><h2>Gantt — Tiến độ theo thời gian</h2><span class="line"></span></div><div class="card gantt">'+head+body+note+'</div></section>';
+}
+
 /* ---------- main ---------- */
 (async function(){
   try{
     if(!ORDER) throw new Error('Thiếu order_id. Mở trang với ?order=<mã đơn>, ví dụ ?order=5143');
-    const [donhang, info, congviec, todo, timeline, hangmuc, hoso] = await Promise.all([
+    const [donhang, info, congviec, todo, timeline, hangmuc, hoso, gantt] = await Promise.all([
       gviz('DonHang'), gviz('DH_Info'), gviz('DH_CongViec'), gviz('DH_ToDo'),
-      gviz('DH_Timeline'), gviz('DH_HangMuc'), gviz('DH_HoSo')
+      gviz('DH_Timeline'), gviz('DH_HangMuc'), gviz('DH_HoSo'), gviz('DH_Gantt')
     ].map(p=>p.catch(()=>[])));
     const infoRow = byOrder(info)[0] || byOrder(donhang)[0] || {};
     if(!Object.keys(infoRow).length) throw new Error('Không tìm thấy đơn order_id = '+ORDER);
@@ -370,7 +390,7 @@ function rDocs(rows){
 
     document.title = `Theo dõi đơn — ${infoRow.kh||ORDER}`;
     document.getElementById('app').innerHTML =
-      rHero(infoRow) + rPipe(infoRow) + rTree(infoRow, byOrder(congviec)) +
+      rHero(infoRow) + rPipe(infoRow) + rGantt(infoRow, byOrder(gantt)) + rTree(infoRow, byOrder(congviec)) +
       rTodo(byOrder(todo)) + rTimeline(byOrder(timeline)) + rKey(infoRow) +
       rHangMuc(byOrder(hangmuc)) + rPay(infoRow) + rDocs(byOrder(hoso)) +
       `<footer>Nguồn: ${esc(infoRow.nguon||'Getfly CRM · Google Chat')} (đơn ${esc(ORDER)}${infoRow.task_tong?', Task '+esc(infoRow.task_tong):''}).${infoRow.cap_nhat?' Cập nhật '+esc(infoRow.cap_nhat)+'.':''}<br>Dữ liệu đọc trực tiếp từ Google Sheet TKS-Web-Data.</footer>`;
