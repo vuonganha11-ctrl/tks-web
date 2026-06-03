@@ -352,7 +352,7 @@ a.pstat .l{color:var(--steel)}
     <div class="sec-h"><span class="no" style="background:var(--red)">&#9888;</span><h2>Sự cố</h2><span class="cnt" id="incCnt"></span><span class="line"></span></div>
     <div class="card scrollx">
       <table>
-        <thead><tr><th style="width:120px">Mức độ</th><th style="width:84px">Task</th><th>Sự cố / Nội dung</th><th style="width:96px">Trễ</th><th style="width:90px">Đơn</th><th style="width:110px"></th></tr></thead>
+        <thead><tr><th style="width:120px">Mức độ</th><th style="width:84px">Task</th><th>Sự cố / Nội dung</th><th style="width:96px">Trễ</th><th style="width:90px">Đơn</th><th style="width:160px">Người thực hiện</th><th style="width:110px"></th></tr></thead>
         <tbody id="incidentsBody"></tbody>
       </table>
     </div>
@@ -605,6 +605,7 @@ function renderIncidents(rows) {
       "<td>" + esc(r.noi_dung) + "</td>" +
       '<td><span class="late' + (s.c === "sev-md" ? " soft" : "") + '">' + esc(r.tre) + "</span></td>" +
       "<td>" + esc(r.don) + "</td>" +
+      "<td>" + esc(r.nguoi_th || "") + "</td>" +
       "<td>" + act + "</td>" +
       "</tr>";
   }).join("");
