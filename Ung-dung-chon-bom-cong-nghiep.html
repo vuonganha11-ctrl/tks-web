@@ -1,0 +1,1123 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ứng dụng Lựa chọn Máy bơm Công nghiệp — Tương quan Lưu chất ↔ Bơm</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{
+  --bg:#0e1726; --bg2:#13203a; --card:#152238; --card2:#1b2c4a;
+  --ink:#e8eef7; --muted:#9fb0c8; --line:#27395a;
+  --cen:#2f80b4;      /* ly tâm */
+  --cen2:#3aa0d8;
+  --pd:#d98324;       /* thể tích */
+  --pd2:#e8a85a;
+  --dose:#8e6fc4;     /* định lượng */
+  --good:#36c692; --warn:#e8b13a; --bad:#e9685f;
+  --accent:#3aa0d8;
+  --shadow:0 10px 30px rgba(0,0,0,.35);
+  --radius:16px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:linear-gradient(180deg,#0b1322,#0e1726 30%,#0e1726);color:var(--ink);
+  font-family:"Segoe UI",system-ui,-apple-system,Roboto,"Helvetica Neue",Arial,sans-serif;line-height:1.6;font-size:16px}
+a{color:var(--cen2);text-decoration:none}
+a:hover{text-decoration:underline}
+.wrap{max-width:1180px;margin:0 auto;padding:0 20px}
+h1,h2,h3,h4{line-height:1.25;margin:0 0 .5em}
+h2{font-size:1.7rem;margin-top:.2em}
+h3{font-size:1.2rem;color:var(--cen2)}
+p{margin:0 0 1em}
+small{color:var(--muted)}
+
+/* HERO */
+header.hero{padding:54px 0 30px;background:
+  radial-gradient(1200px 380px at 18% -10%, rgba(47,128,180,.30), transparent 60%),
+  radial-gradient(1000px 360px at 92% -20%, rgba(217,131,36,.22), transparent 60%);
+  border-bottom:1px solid var(--line)}
+.badge{display:inline-block;font-size:.78rem;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--cen2);border:1px solid var(--line);padding:5px 12px;border-radius:999px;background:rgba(58,160,216,.08)}
+.hero h1{font-size:2.35rem;margin:.5em 0 .25em;background:linear-gradient(90deg,#cfe6f7,#9fdcff 40%,#f5c98a);
+  -webkit-background-clip:text;background-clip:text;color:transparent}
+.hero p.lead{font-size:1.12rem;color:var(--muted);max-width:760px}
+.hero .meta{margin-top:14px;color:var(--muted);font-size:.92rem}
+
+/* NAV */
+nav.bar{position:sticky;top:0;z-index:50;background:rgba(11,19,34,.86);backdrop-filter:blur(10px);
+  border-bottom:1px solid var(--line)}
+nav.bar .wrap{display:flex;gap:6px;flex-wrap:wrap;align-items:center;padding:10px 20px}
+nav.bar a{color:var(--muted);font-size:.92rem;padding:7px 12px;border-radius:9px;white-space:nowrap}
+nav.bar a:hover{color:var(--ink);background:var(--card);text-decoration:none}
+nav.bar .brand{font-weight:700;color:var(--ink);margin-right:8px}
+
+section{padding:46px 0;border-bottom:1px solid var(--line)}
+section h2 .num{color:var(--pd2);font-weight:800;margin-right:.4em}
+.sub{color:var(--muted);max-width:820px;margin-top:-6px;margin-bottom:22px}
+
+/* CARDS / GRID */
+.grid{display:grid;gap:18px}
+.g2{grid-template-columns:repeat(2,1fr)}
+.g3{grid-template-columns:repeat(3,1fr)}
+.g4{grid-template-columns:repeat(4,1fr)}
+@media(max-width:900px){.g2,.g3,.g4{grid-template-columns:1fr}}
+.card{background:linear-gradient(180deg,var(--card),var(--bg2));border:1px solid var(--line);
+  border-radius:var(--radius);padding:20px;box-shadow:var(--shadow)}
+.card.cen{border-top:3px solid var(--cen)}
+.card.pd{border-top:3px solid var(--pd)}
+.card.dose{border-top:3px solid var(--dose)}
+.pill{display:inline-block;font-size:.74rem;padding:3px 9px;border-radius:999px;border:1px solid var(--line);color:var(--muted);margin:2px 4px 2px 0}
+.pill.cen{color:var(--cen2);border-color:rgba(58,160,216,.5)}
+.pill.pd{color:var(--pd2);border-color:rgba(232,168,90,.5)}
+.pill.dose{color:#c4aef0;border-color:rgba(142,111,196,.5)}
+
+/* SELECTOR */
+.tool{background:linear-gradient(180deg,#13233f,#101b30);border:1px solid var(--line);border-radius:20px;
+  padding:24px;box-shadow:var(--shadow)}
+.form-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px 20px}
+@media(max-width:900px){.form-grid{grid-template-columns:1fr}}
+.field label{display:block;font-weight:600;margin-bottom:6px;font-size:.95rem}
+.field .hint{font-size:.78rem;color:var(--muted);font-weight:400}
+select{width:100%;padding:10px 12px;border-radius:10px;background:#0c1729;color:var(--ink);
+  border:1px solid var(--line);font-size:.95rem;appearance:none;
+  background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);
+  background-position:calc(100% - 18px) 50%,calc(100% - 13px) 50%;background-size:5px 5px,5px 5px;background-repeat:no-repeat}
+select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(58,160,216,.2)}
+.btn{cursor:pointer;border:none;border-radius:12px;padding:13px 26px;font-size:1rem;font-weight:700;
+  background:linear-gradient(90deg,var(--cen),var(--cen2));color:#04121f;box-shadow:var(--shadow);transition:.15s}
+.btn:hover{transform:translateY(-1px);filter:brightness(1.06)}
+.btn.alt{background:transparent;border:1px solid var(--line);color:var(--muted)}
+.btn.alt:hover{color:var(--ink)}
+.actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:20px;align-items:center}
+
+/* RESULTS */
+#results{margin-top:8px}
+.res-card{background:linear-gradient(180deg,var(--card),var(--bg2));border:1px solid var(--line);
+  border-radius:14px;padding:18px;margin-bottom:14px;position:relative;overflow:hidden}
+.res-card.top{border:1px solid var(--good);box-shadow:0 0 0 1px rgba(54,198,146,.25),var(--shadow)}
+.res-head{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;flex-wrap:wrap}
+.res-title{font-size:1.15rem;font-weight:700;margin:0}
+.res-en{color:var(--muted);font-size:.85rem;font-weight:400}
+.rank{font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;padding:4px 10px;border-radius:999px;
+  background:rgba(54,198,146,.15);color:var(--good);border:1px solid rgba(54,198,146,.4);white-space:nowrap}
+.rank.r2{background:rgba(58,160,216,.12);color:var(--cen2);border-color:rgba(58,160,216,.4)}
+.rank.r3{background:rgba(159,176,200,.1);color:var(--muted);border-color:var(--line)}
+.scorebar{height:10px;border-radius:6px;background:#0c1729;overflow:hidden;margin:12px 0 6px;border:1px solid var(--line)}
+.scorebar > i{display:block;height:100%;border-radius:6px;background:linear-gradient(90deg,var(--good),#7fe3c0)}
+.scoreval{font-size:.82rem;color:var(--muted)}
+.reasons,.cautions{margin:10px 0 0;padding:0;list-style:none}
+.reasons li,.cautions li{font-size:.9rem;padding:3px 0 3px 24px;position:relative}
+.reasons li:before{content:"✓";position:absolute;left:0;color:var(--good);font-weight:800}
+.cautions li:before{content:"!";position:absolute;left:2px;color:var(--warn);font-weight:800}
+.mat{margin-top:12px;font-size:.88rem;background:rgba(58,160,216,.07);border:1px dashed var(--line);
+  padding:10px 12px;border-radius:10px}
+.empty{color:var(--muted);text-align:center;padding:30px}
+
+/* TABLES */
+.tbl-wrap{overflow-x:auto;border-radius:12px;border:1px solid var(--line)}
+table{width:100%;border-collapse:collapse;font-size:.9rem;min-width:680px}
+th,td{padding:10px 12px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+thead th{background:var(--card2);color:var(--ink);position:sticky;top:0;font-size:.85rem}
+tbody tr:nth-child(even){background:rgba(255,255,255,.02)}
+td .yes{color:var(--good);font-weight:700}
+td .no{color:var(--bad)}
+td .mid{color:var(--warn)}
+.legend{font-size:.82rem;color:var(--muted);margin-top:8px}
+
+/* PRINCIPLE compare */
+.vs{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+@media(max-width:900px){.vs{grid-template-columns:1fr}}
+.vs .card h3{display:flex;align-items:center;gap:8px}
+.dot{width:12px;height:12px;border-radius:50%;display:inline-block}
+.dot.c{background:var(--cen2)} .dot.p{background:var(--pd2)}
+ul.tick{list-style:none;padding:0;margin:0}
+ul.tick li{padding:5px 0 5px 22px;position:relative;font-size:.92rem}
+ul.tick li:before{content:"▸";position:absolute;left:0;color:var(--muted)}
+
+.chartbox{background:#0c1729;border:1px solid var(--line);border-radius:14px;padding:16px}
+.chartbox h4{margin:0 0 6px}
+.note{font-size:.8rem;color:var(--muted);margin-top:8px}
+
+.callout{border-left:3px solid var(--pd);background:rgba(217,131,36,.07);padding:14px 16px;border-radius:0 12px 12px 0;margin:14px 0}
+.callout.cen{border-color:var(--cen);background:rgba(47,128,180,.07)}
+
+ol.steps{counter-reset:s;list-style:none;padding:0}
+ol.steps>li{position:relative;padding:14px 14px 14px 58px;margin-bottom:12px;background:var(--card);
+  border:1px solid var(--line);border-radius:12px}
+ol.steps>li:before{counter-increment:s;content:counter(s);position:absolute;left:14px;top:14px;
+  width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,var(--cen),var(--pd));
+  color:#04121f;font-weight:800;display:flex;align-items:center;justify-content:center}
+ol.steps b{color:var(--ink)}
+
+footer{padding:34px 0 60px;color:var(--muted);font-size:.88rem}
+.ref{font-size:.86rem}
+.ref li{margin-bottom:6px}
+.tag-row{margin:6px 0 0}
+hr.soft{border:none;border-top:1px solid var(--line);margin:22px 0}
+.kpi{display:flex;gap:14px;flex-wrap:wrap;margin-top:10px}
+.kpi .b{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 16px;min-width:150px}
+.kpi .b b{display:block;font-size:1.4rem;color:var(--cen2)}
+.kpi .b span{font-size:.82rem;color:var(--muted)}
+.toc-mini{font-size:.82rem;color:var(--muted)}
+.center{text-align:center}
+.muted{color:var(--muted)}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <span class="badge">Bơm công nghiệp · Nghiên cứu chuyên sâu + Công cụ chọn bơm</span>
+    <h1>Ứng dụng Lựa chọn Máy bơm theo Đặc tính Lưu chất</h1>
+    <p class="lead">Trả lời vài câu hỏi về lưu chất và điều kiện vận hành — công cụ sẽ xếp hạng các dòng bơm phù hợp nhất kèm <b>lý do kỹ thuật</b> và <b>cảnh báo</b>. Kèm theo là báo cáo chuyên sâu về mối tương quan giữa độ nhớt, tỷ trọng, hàm rắn, độ nhạy cắt, NPSH, ăn mòn… với khả năng xử lý của từng họ bơm.</p>
+    <div class="kpi">
+      <div class="b"><b>15+</b><span>dòng bơm trong cơ sở dữ liệu</span></div>
+      <div class="b"><b>8</b><span>đặc tính lưu chất / vận hành</span></div>
+      <div class="b"><b>1 → 10⁶ cP</b><span>dải độ nhớt phân tích</span></div>
+    </div>
+    <p class="meta">Dành cho cả kỹ sư bán hàng/tư vấn và kỹ sư thiết kế · Đơn vị: cP (≈ cSt với lưu chất gần nước), m (cột áp), m³/h (lưu lượng)</p>
+  </div>
+</header>
+
+<nav class="bar">
+  <div class="wrap">
+    <span class="brand">⚙︎ ChọnBơm</span>
+    <a href="#selector">Công cụ chọn bơm</a>
+    <a href="#phanloai">Phân loại</a>
+    <a href="#tracuu">Tra cứu phân loại</a>
+    <a href="#nguyenly">Nền tảng H–Q/NPSH/BEP</a>
+    <a href="#tuongquan">Tương quan lưu chất</a>
+    <a href="#matran">Ma trận tra chọn</a>
+    <a href="#quytrinh">Quy trình & khuyến cáo</a>
+    <a href="#vatlieu">Vật liệu</a>
+    <a href="#tailieu">Tài liệu</a>
+  </div>
+</nav>
+
+<!-- ============ 1. SELECTOR ============ -->
+<section id="selector">
+  <div class="wrap">
+    <h2><span class="num">01</span>Công cụ chọn bơm thông minh</h2>
+    <p class="sub">Nhập đặc tính lưu chất và yêu cầu vận hành. Thuật toán cho điểm từng dòng bơm trên 8 tiêu chí và xếp hạng kết quả. Đây là công cụ định hướng nhanh — quyết định cuối cùng cần xác minh bằng đường đặc tính của nhà sản xuất và tính toán NPSH.</p>
+
+    <div class="tool">
+      <div class="form-grid">
+        <div class="field">
+          <label>Loại lưu chất</label>
+          <select id="f_fluid">
+            <option value="nuoc">Nước sạch / nước công nghệ</option>
+            <option value="nuocthai">Nước thải / có cặn</option>
+            <option value="dau">Dầu / nhiên liệu / nhớt</option>
+            <option value="hoachat">Hóa chất ăn mòn</option>
+            <option value="dungmoi">Dung môi / lưu chất dễ bay hơi</option>
+            <option value="thucpham">Thực phẩm / dược / mỹ phẩm (vệ sinh)</option>
+            <option value="slurry">Bùn / cát / quặng (slurry)</option>
+            <option value="polymer">Polymer / keo / hồ / paste</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>Độ nhớt <span class="hint">(cP — nước ≈ 1)</span></label>
+          <select id="f_visc">
+            <option value="v1">Rất loãng &lt; 10 cP (nước, xăng, dung môi)</option>
+            <option value="v2">10 – 100 cP (dầu nhẹ, sữa, nước trái cây)</option>
+            <option value="v3">100 – 500 cP (dầu nhờn, syrup loãng)</option>
+            <option value="v4">500 – 5.000 cP (mật ong, sơn, dầu nặng)</option>
+            <option value="v5">5.000 – 50.000 cP (keo, mỡ, bùn đặc)</option>
+            <option value="v6">&gt; 50.000 cP (paste, nhựa, chocolate đặc)</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>Tỷ trọng (SG) <span class="hint">nước = 1,0</span></label>
+          <select id="f_sg">
+            <option value="low">&lt; 1,0 (nhẹ hơn nước: dầu, dung môi)</option>
+            <option value="normal" selected>≈ 1,0 (nước, dung dịch loãng)</option>
+            <option value="high">1,0 – 1,5 (axit, dung dịch đặc)</option>
+            <option value="vhigh">&gt; 1,5 (bùn quặng, axit đậm đặc)</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>Hàm rắn / kích thước hạt</label>
+          <select id="f_solids">
+            <option value="none">Không có hạt rắn</option>
+            <option value="fine">Hạt mịn &lt; 0,5 mm (cặn lơ lửng)</option>
+            <option value="medium">Hạt trung bình 0,5 – 5 mm</option>
+            <option value="large">Hạt lớn / dạng sợi &gt; 5 mm</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>Độ nhạy cắt (shear) <span class="hint">nhũ tương, polymer, tế bào…</span></label>
+          <select id="f_shear">
+            <option value="no">Không nhạy cắt</option>
+            <option value="mid">Nhạy cắt vừa</option>
+            <option value="high">Rất nhạy cắt (cần bơm êm dịu)</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>Lưu lượng yêu cầu</label>
+          <select id="f_flow">
+            <option value="dosing">Định lượng (&lt; 0,5 m³/h)</option>
+            <option value="small">Nhỏ (0,5 – 10 m³/h)</option>
+            <option value="medium" selected>Trung bình (10 – 100 m³/h)</option>
+            <option value="large">Lớn (100 – 1.000 m³/h)</option>
+            <option value="vlarge">Rất lớn (&gt; 1.000 m³/h)</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>Cột áp / áp suất yêu cầu</label>
+          <select id="f_head">
+            <option value="low">Thấp (&lt; 10 m / &lt; 1 bar)</option>
+            <option value="medium" selected>Trung bình (10 – 50 m / 1 – 5 bar)</option>
+            <option value="high">Cao (50 – 200 m / 5 – 20 bar)</option>
+            <option value="vhigh">Rất cao (&gt; 200 m / &gt; 20 bar)</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>Nhiệt độ lưu chất</label>
+          <select id="f_temp">
+            <option value="cold">Lạnh / đông (&lt; 0 °C)</option>
+            <option value="ambient" selected>Thường (0 – 60 °C)</option>
+            <option value="warm">Nóng vừa (60 – 120 °C)</option>
+            <option value="hot">Nóng (&gt; 120 °C)</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>Mức độ ăn mòn</label>
+          <select id="f_corr">
+            <option value="none">Không ăn mòn</option>
+            <option value="mild">Ăn mòn nhẹ (nước thải, muối loãng)</option>
+            <option value="strong">Ăn mòn mạnh (axit/kiềm đậm đặc)</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>Lưu chất độc / dễ cháy / dễ bay hơi?</label>
+          <select id="f_hazard">
+            <option value="no">Không</option>
+            <option value="yes">Có — cần chống rò rỉ tuyệt đối</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>Yêu cầu định lượng chính xác?</label>
+          <select id="f_dose">
+            <option value="no">Không</option>
+            <option value="yes">Có — cần định lượng theo thể tích (±%)</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>Cần tự mồi / hút sâu?</label>
+          <select id="f_prime">
+            <option value="no">Không (bố trí hút ngập được)</option>
+            <option value="yes">Có — bơm phải tự mồi/chạy khô</option>
+          </select>
+        </div>
+      </div>
+
+      <input type="hidden" id="f_hyg">
+      <div class="actions">
+        <button class="btn" onclick="runSelect()">▶ Gợi ý bơm phù hợp</button>
+        <button class="btn alt" onclick="resetForm()">Đặt lại</button>
+        <span class="muted" style="font-size:.85rem">Kết quả cập nhật ngay khi đổi lựa chọn.</span>
+      </div>
+    </div>
+
+    <div id="results" style="margin-top:22px"></div>
+  </div>
+</section>
+
+<!-- ============ 2. PHÂN LOẠI ============ -->
+<section id="phanloai">
+  <div class="wrap">
+    <h2><span class="num">02</span>Phân loại máy bơm công nghiệp</h2>
+    <p class="sub">Toàn bộ thế giới bơm chia thành hai nguyên lý gốc. Hiểu đúng nhánh gốc là bước đầu tiên và quan trọng nhất khi chọn bơm.</p>
+
+    <div class="vs">
+      <div class="card cen">
+        <h3><span class="dot c"></span>Bơm động học — Ly tâm (Kinetic / Centrifugal)</h3>
+        <p>Truyền năng lượng cho lưu chất bằng <b>lực ly tâm</b> từ cánh quạt quay, biến vận tốc thành áp suất. Lưu lượng phụ thuộc vào áp suất hệ thống (đường đặc tính dốc).</p>
+        <p><b>Theo hướng dòng:</b> hướng tâm (radial), hỗn hợp (mixed), hướng trục (axial).</p>
+        <p><b>Theo lắp đặt:</b> đặt cạn (dry), đặt chìm (submersible), chìm một phần, thiết kế đặc biệt.</p>
+        <p><b>Theo trục & tầng cánh:</b> trục ngang/đứng · một tầng / đa tầng.</p>
+        <div class="tag-row">
+          <span class="pill cen">Hút cuối</span><span class="pill cen">Hai cửa hút</span>
+          <span class="pill cen">Đa tầng</span><span class="pill cen">Trục đứng / tuabin</span>
+          <span class="pill cen">Chìm / giếng khoan</span><span class="pill cen">Tăng áp</span>
+          <span class="pill cen">Tự mồi</span><span class="pill cen">Dẫn động từ / canned motor</span>
+          <span class="pill cen">Bùn (slurry)</span>
+        </div>
+      </div>
+
+      <div class="card pd">
+        <h3><span class="dot p"></span>Bơm thể tích (Positive Displacement)</h3>
+        <p>Giam một <b>thể tích lưu chất cố định</b> rồi đẩy đi theo mỗi chu kỳ. Lưu lượng gần như không đổi theo áp suất (đường đặc tính gần thẳng đứng) → bắt buộc có van an toàn.</p>
+        <p><b>Dạng đối ứng (reciprocating):</b> piston/plunger, bơm màng (AODD khí nén, EODD điện).</p>
+        <p><b>Dạng quay (rotary):</b> bánh răng (ngoài/trong), cánh khế (lobe), cánh gạt (vane), trục vít (screw), khoang lũy tiến (progressive cavity), nhu động (peristaltic), đĩa.</p>
+        <div class="tag-row">
+          <span class="pill pd">Bánh răng</span><span class="pill pd">Trục vít</span>
+          <span class="pill pd">Khoang lũy tiến</span><span class="pill pd">Cánh khế/lobe</span>
+          <span class="pill pd">Cánh gạt</span><span class="pill pd">Màng AODD/EODD</span>
+          <span class="pill pd">Piston/plunger</span><span class="pill pd">Nhu động</span>
+        </div>
+        <div style="margin-top:10px">
+          <span class="pill dose">Định lượng: màng điện tử</span>
+          <span class="pill dose">màng thủy lực</span>
+          <span class="pill dose">piston</span>
+          <span class="pill dose">nhu động</span>
+          <span class="pill dose">không van</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout">
+      <b>Quy tắc nhanh:</b> Lưu chất loãng (≈ nước), lưu lượng lớn, cột áp trung bình → <b>ly tâm</b>. Lưu chất nhớt cao, lẫn hạt, nhạy cắt, cần áp suất cao hoặc định lượng chính xác → <b>thể tích</b>. Độ nhớt là yếu tố có sức nặng lớn nhất trong quyết định này.
+    </div>
+  </div>
+</section>
+
+<!-- ============ TRA CỨU PHÂN LOẠI (số hóa mind map) ============ -->
+<section id="tracuu">
+  <div class="wrap">
+    <h2><span class="num">02b</span>Tra cứu phân loại bơm (số hóa)</h2>
+    <p class="sub">Bản số hóa của sơ đồ MIND MAP — tìm kiếm được, lọc theo họ bơm. Gõ tên Việt/Anh, công dụng hoặc loại lưu chất (vd: "nhớt", "slurry", "vacuum", "định lượng") để lọc nhanh.</p>
+
+    <div class="tool" style="padding:18px">
+      <input id="catSearch" type="text" placeholder="🔍 Tìm: tên bơm, công dụng, lưu chất… (vd: nhớt, bùn, chân không, vệ sinh)"
+        style="width:100%;padding:12px 14px;border-radius:10px;background:#0c1729;color:var(--ink);border:1px solid var(--line);font-size:1rem">
+      <div id="catFilters" style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn alt catf active" data-f="all" onclick="setCatFilter('all',this)">Tất cả</button>
+        <button class="btn alt catf" data-f="cen" onclick="setCatFilter('cen',this)">Ly tâm / động học</button>
+        <button class="btn alt catf" data-f="recip" onclick="setCatFilter('recip',this)">Thể tích — đối ứng</button>
+        <button class="btn alt catf" data-f="rotary" onclick="setCatFilter('rotary',this)">Thể tích — quay</button>
+        <button class="btn alt catf" data-f="dose" onclick="setCatFilter('dose',this)">Định lượng</button>
+      </div>
+      <div id="catCount" class="muted" style="font-size:.85rem;margin-top:10px"></div>
+    </div>
+
+    <div id="catalog" class="grid g3" style="margin-top:16px"></div>
+  </div>
+</section>
+
+<!-- ============ 3. NGUYÊN LÝ & ĐƯỜNG ĐẶC TÍNH ============ -->
+<section id="nguyenly">
+  <div class="wrap">
+    <h2><span class="num">03</span>Nguyên lý hoạt động & đường đặc tính</h2>
+    <p class="sub">Hai họ bơm phản ứng ngược nhau với áp suất và với độ nhớt. Đây là gốc rễ của mọi khuyến cáo lựa chọn.</p>
+
+    <div class="vs">
+      <div class="card cen">
+        <h3><span class="dot c"></span>Bơm ly tâm</h3>
+        <ul class="tick">
+          <li><b>Lưu lượng ↔ áp suất:</b> phụ thuộc mạnh — áp suất hệ thống tăng thì lưu lượng giảm theo đường cong H-Q.</li>
+          <li><b>Dòng chảy:</b> liên tục, êm, không xung động.</li>
+          <li><b>Độ nhớt:</b> hiệu suất sụt nhanh khi độ nhớt tăng; tốn thêm công suất.</li>
+          <li><b>Tự mồi:</b> đa số không tự mồi (trừ dòng self-priming).</li>
+          <li><b>Ưu:</b> rẻ, gọn, lưu lượng lớn, ít bảo trì, dễ điều khiển bằng biến tần/van.</li>
+          <li><b>Nhược:</b> kém với lưu chất nhớt/áp suất rất cao; nhạy với NPSH (cavitation).</li>
+        </ul>
+      </div>
+      <div class="card pd">
+        <h3><span class="dot p"></span>Bơm thể tích</h3>
+        <ul class="tick">
+          <li><b>Lưu lượng ↔ áp suất:</b> gần như độc lập — lưu lượng cố định dù áp suất thay đổi (cần van an toàn).</li>
+          <li><b>Dòng chảy:</b> có thể xung động (piston/màng) hoặc đều (trục vít, lobe, PC).</li>
+          <li><b>Độ nhớt:</b> hiệu suất thể tích <b>tăng</b> theo độ nhớt (lưu chất bịt kín khe hở).</li>
+          <li><b>Tự mồi:</b> hầu hết tự mồi tốt, hút sâu được.</li>
+          <li><b>Ưu:</b> nhớt cao, áp suất cao, định lượng chính xác, lưu lượng ổn định.</li>
+          <li><b>Nhược:</b> đắt hơn, nhiều chi tiết mài mòn; tuyệt đối không chạy khi van xả đóng.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="grid g2" style="margin-top:18px">
+      <div class="chartbox">
+        <h4>Đường đặc tính H–Q (minh họa)</h4>
+        <canvas id="chartHQ" height="230"></canvas>
+        <p class="note">Ly tâm: đường cong dốc — lưu lượng giảm khi cột áp tăng. Thể tích: gần thẳng đứng — lưu lượng gần như cố định theo áp suất.</p>
+      </div>
+      <div class="chartbox">
+        <h4>Hiệu suất theo độ nhớt (minh họa, trục log)</h4>
+        <canvas id="chartVisc" height="230"></canvas>
+        <p class="note">Ly tâm tụt dốc sau ~100 cP và thường phi kinh tế &gt; 500–1.000 cP. Bơm thể tích cải thiện hiệu suất thể tích khi độ nhớt tăng.</p>
+      </div>
+    </div>
+
+    <h3 style="margin-top:26px">NPSH & Cavitation — vì sao bơm "sôi" và hỏng cánh</h3>
+    <div class="vs">
+      <div class="card cen">
+        <h4 style="margin-top:0">NPSH là gì?</h4>
+        <p style="font-size:.95rem"><b>NPSH (Net Positive Suction Head)</b> là áp suất dư tại cửa hút (quy về cột chất lỏng) trên mức áp suất hơi. Khi áp suất tại mắt cánh tụt dưới áp suất hơi → lưu chất bốc hơi tạo bọt, bọt nổ sập phá cánh = <b>cavitation</b> (rỗ khí): tiếng ồn lạo xạo, rung, sụt lưu lượng, mòn cánh.</p>
+        <ul class="tick">
+          <li><b>NPSHa</b> (available): hệ thống cấp — phụ thuộc áp suất bể, độ cao hút, tổn thất ống, nhiệt độ & áp suất hơi của lưu chất.</li>
+          <li><b>NPSHr</b> (required): do bơm quy định — bơm cần tối thiểu bấy nhiêu để không cavitate.</li>
+        </ul>
+      </div>
+      <div class="card cen">
+        <h4 style="margin-top:0">Quy tắc an toàn</h4>
+        <div class="callout cen" style="margin:0 0 10px">
+          <b>NPSHa &gt; NPSHr</b> với biên ≥ giá trị lớn hơn của <b>1,5 m (5 ft)</b> hoặc <b>10% NPSHa</b>.
+        </div>
+        <ul class="tick">
+          <li>Lưu chất <b>dễ bay hơi</b> (dung môi, hydrocarbon): biên 1–3 m; chỉ +10 °C cũng làm tụt mạnh biên NPSH.</li>
+          <li>Nhiệt độ tăng → áp suất hơi tăng → NPSHa giảm → dễ cavitation hơn.</li>
+          <li>Bơm thể tích thường NPSHr thấp + tự mồi → lợi thế khi hút khó/hút sâu.</li>
+        </ul>
+      </div>
+    </div>
+
+    <h3 style="margin-top:24px">BEP — Điểm hiệu suất tốt nhất (Best Efficiency Point)</h3>
+    <p>Mỗi bơm ly tâm có một điểm trên đường H–Q cho <b>hiệu suất cao nhất</b> = BEP. Chạy càng xa BEP, dòng chảy trong bơm càng rối → <b>rung, lực thủy lực lệch trục, mòn phớt/bạc, nóng, cavitation tái tuần hoàn</b>. Nguyên tắc vận hành: giữ điểm làm việc trong khoảng <b>70–110% lưu lượng BEP</b> (vùng ưu tiên), tránh vận hành lâu ở &lt;50% hoặc quá xa về phải.</p>
+
+    <div class="chartbox" style="margin-top:8px">
+      <h4>Đường H–Q, hiệu suất & vùng làm việc khuyến nghị quanh BEP (minh họa)</h4>
+      <canvas id="chartBEP" height="240"></canvas>
+      <p class="note">Vùng xanh = 70–110% BEP (nên vận hành). Hiệu suất đạt đỉnh tại BEP rồi giảm hai phía. Chọn bơm sao cho điểm làm việc của hệ thống rơi gần BEP.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 4. TƯƠNG QUAN LƯU CHẤT ↔ BƠM ============ -->
+<section id="tuongquan">
+  <div class="wrap">
+    <h2><span class="num">04</span>Tương quan đặc tính lưu chất ↔ khả năng xử lý của bơm</h2>
+    <p class="sub">Phần lõi của nghiên cứu: từng đặc tính lưu chất ảnh hưởng thế nào đến lựa chọn, kèm số liệu định lượng.</p>
+
+    <h3>4.1 — Độ nhớt: yếu tố quyết định nhánh gốc</h3>
+    <p>Độ nhớt là đặc tính có ảnh hưởng lớn nhất và hai họ bơm phản ứng <b>ngược chiều</b> nhau, tạo ra ranh giới lựa chọn rõ ràng. Với bơm ly tâm, độ nhớt cao làm ma sát đĩa cánh tăng → cột áp, lưu lượng và hiệu suất đều giảm, trong khi công suất và NPSH yêu cầu lại tăng. Với bơm thể tích, lưu chất nhớt bịt kín khe hở nội bộ nên hiệu suất thể tích <b>tăng</b> theo độ nhớt.</p>
+
+    <div class="callout cen">
+      <b>Ngưỡng kỹ thuật cần nhớ:</b> Bơm ly tâm hoạt động tốt ở 1–100 cP; hiệu suất giảm 10–30% trong dải 200–500 cP; thường <b>phi kinh tế &gt; 500–1.000 cP</b>. Theo tiêu chuẩn <b>Hydraulic Institute (HI 9.6.7)</b>, cần hiệu chỉnh đường đặc tính (head/flow/efficiency) khi độ nhớt động học <b>≥ 4,3 cSt</b>; NPSH phải đánh giá riêng. Bơm khoang lũy tiến (PC) xử lý được dải <b>1 đến 1.000.000 cSt</b> — rộng nhất.
+    </div>
+
+    <div class="chartbox" style="margin-top:14px">
+      <h4>Dải độ nhớt làm việc của các dòng bơm (trục log, cP)</h4>
+      <canvas id="chartRange" height="300"></canvas>
+      <p class="note">Thanh càng dài về phải = xử lý được lưu chất càng nhớt. Khoang lũy tiến, trục vít, cánh khế phủ dải nhớt rộng nhất; ly tâm và cánh gạt giới hạn ở vùng loãng.</p>
+    </div>
+
+    <h3 style="margin-top:26px">4.2 — Tỷ trọng (Specific Gravity)</h3>
+    <p>Với bơm ly tâm, <b>cột áp (m) không đổi theo tỷ trọng</b> — bơm tạo ra cùng một chiều cao cột chất lỏng bất kể nặng nhẹ. Nhưng <b>áp suất đầu đẩy = SG × cột áp</b> và <b>công suất tỉ lệ thuận với SG</b>. Vì vậy lưu chất nặng (axit đậm đặc, bùn quặng) đòi hỏi động cơ lớn hơn dù cột áp yêu cầu không đổi. Khi độ nhớt gần như nước, SG không ảnh hưởng đến lưu lượng — chỉ ảnh hưởng công suất và áp suất đầu đẩy. Với bơm thể tích, SG ảnh hưởng trực tiếp đến công suất và mô-men trục.</p>
+
+    <h3 style="margin-top:22px">4.3 — Hàm rắn & kích thước hạt</h3>
+    <p>Lưu chất có hạt rắn loại bỏ ngay các bơm khe hở kín. <b>Bơm bánh răng và cánh gạt sẽ kẹt hoặc mài mòn nhanh</b> khi có hạt; đa số bơm ly tâm tiêu chuẩn dễ tắc. Giải pháp: bơm ly tâm bùn với cánh hở/bán hở và vật liệu chống mài mòn, hoặc các bơm thể tích thông thoáng (PC, nhu động, AODD, lobe).</p>
+    <ul class="tick">
+      <li><b>Cánh hở / vortex:</b> qua được hạt lớn, dạng sợi; áp suất thấp, hiệu suất thấp hơn.</li>
+      <li><b>Cánh bán hở:</b> cân bằng — hạt trung-lớn, hiệu suất khá.</li>
+      <li><b>Cánh kín + vật liệu cứng/lót cao su:</b> hạt mịn–thô sắc cạnh ở áp suất cao, chống mài mòn cao nhất.</li>
+      <li><b>PC / nhu động / AODD:</b> xử lý đồng thời hàm rắn cao và lưu chất nhớt.</li>
+    </ul>
+
+    <h3 style="margin-top:22px">4.4 — Độ nhạy cắt (Shear sensitivity)</h3>
+    <p>Nhũ tương, latex, polymer, sơn, sản phẩm sinh học, thực phẩm có cấu trúc dễ bị phá vỡ bởi lực cắt cao. Bơm ly tâm tốc độ cao và một số bơm bánh răng tạo lực cắt lớn. Cần dùng bơm <b>êm dịu, lực cắt thấp</b>: cánh khế (lobe), khoang lũy tiến (PC), nhu động (peristaltic), màng (AODD). Bơm nhu động và lobe không có tiếp xúc kim loại–lưu chất phá cấu trúc nên bảo toàn sản phẩm tốt nhất.</p>
+
+    <h3 style="margin-top:22px">4.5 — NPSH, áp suất hơi & lưu chất dễ bay hơi</h3>
+    <p>Cavitation xảy ra khi áp suất tại cửa hút tụt xuống dưới áp suất hơi → bọt hơi hình thành và nổ sập, phá hỏng cánh bơm. Nguyên tắc: <b>NPSH khả dụng (NPSHa) phải lớn hơn NPSH yêu cầu (NPSHr)</b> với biên an toàn ≥ giá trị lớn hơn của 5 ft (1,5 m) hoặc 10% NPSHa. Áp suất hơi tăng theo nhiệt độ — chỉ cần +10 °C cũng có thể làm sụt mạnh biên NPSH với hydrocarbon. Với lưu chất dễ bay hơi cần biên 1–3 m. Bơm thể tích thường có NPSHr thấp và tự mồi, lợi thế khi hút khó.</p>
+
+    <h3 style="margin-top:22px">4.6 — Ăn mòn & độc hại / dễ cháy</h3>
+    <p>Lưu chất ăn mòn quyết định <b>vật liệu</b> (xem mục 07). Lưu chất độc, dễ cháy, dễ bay hơi cần kết cấu <b>không phớt (sealless)</b>: bơm dẫn động từ (single containment) hoặc động cơ đóng hộp/canned motor (double containment — an toàn cao nhất cho chất độc/bay hơi). Bơm màng AODD và nhu động cũng kín tự nhiên, lại chạy khô an toàn.</p>
+
+    <h3 style="margin-top:22px">4.7 — Nhiệt độ</h3>
+    <p>Nhiệt độ tác động gián tiếp nhưng quan trọng: làm <b>giảm độ nhớt</b> (có thể đổi nhánh chọn bơm), <b>tăng áp suất hơi</b> (rủi ro cavitation), và giới hạn <b>vật liệu/phớt</b>. PTFE chịu −200…+260 °C, PVDF tới ~135 °C, gioăng EPDM/FKM tùy môi chất. Lưu chất nóng còn gây giãn nở nhiệt, cần khe hở và làm mát phớt phù hợp.</p>
+
+    <h3 style="margin-top:22px">4.8 — Định lượng chính xác</h3>
+    <p>Khi cần bơm đúng liều theo thể tích (hóa chất xử lý nước, phụ gia, châm pha): chọn <b>bơm định lượng</b>. Piston/plunger cho độ chính xác cao nhất (đến ±0,1–0,5%), bơm màng định lượng (điện tử/cơ khí/thủy lực) chống rò rỉ tốt, bơm nhu động đạt ~±1% và lý tưởng cho hóa chất mài mòn/nhạy cắt vì lưu chất chỉ tiếp xúc ống.</p>
+  </div>
+</section>
+
+<!-- ============ 5. MA TRẬN TRA CHỌN ============ -->
+<section id="matran">
+  <div class="wrap">
+    <h2><span class="num">05</span>Ma trận tra chọn nhanh theo dòng bơm</h2>
+    <p class="sub">Bảng tổng hợp khả năng xử lý của từng dòng bơm theo các đặc tính lưu chất chính. Ký hiệu: <span class="yes">●</span> tốt · <span class="mid">◐</span> hạn chế · <span class="no">○</span> không phù hợp.</p>
+
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Dòng bơm</th>
+            <th>Độ nhớt tối ưu (cP)</th>
+            <th>Hàm rắn</th>
+            <th>Nhạy cắt</th>
+            <th>Áp suất cao</th>
+            <th>Lưu lượng lớn</th>
+            <th>Tự mồi</th>
+            <th>Định lượng</th>
+            <th>Ứng dụng tiêu biểu</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td><b>Ly tâm hút cuối</b></td><td>0,3 – 300</td><td><span class="no">○</span></td><td><span class="no">○</span></td><td><span class="mid">◐</span></td><td><span class="yes">●</span></td><td><span class="no">○</span></td><td><span class="no">○</span></td><td>Cấp nước, làm mát, công nghệ chung</td></tr>
+          <tr><td><b>Ly tâm đa tầng</b></td><td>0,3 – 200</td><td><span class="no">○</span></td><td><span class="no">○</span></td><td><span class="yes">●</span></td><td><span class="mid">◐</span></td><td><span class="no">○</span></td><td><span class="no">○</span></td><td>Cấp nước cao tầng, lò hơi, RO, tăng áp</td></tr>
+          <tr><td><b>Ly tâm hai cửa hút</b></td><td>0,3 – 200</td><td><span class="no">○</span></td><td><span class="no">○</span></td><td><span class="mid">◐</span></td><td><span class="yes">●</span></td><td><span class="no">○</span></td><td><span class="no">○</span></td><td>Cấp nước lớn, PCCC, tưới tiêu</td></tr>
+          <tr><td><b>Trục đứng / chìm</b></td><td>0,3 – 200</td><td><span class="mid">◐</span></td><td><span class="no">○</span></td><td><span class="yes">●</span></td><td><span class="yes">●</span></td><td><span class="yes">●</span></td><td><span class="no">○</span></td><td>Giếng khoan, bể sâu, trạm bơm nước thải</td></tr>
+          <tr><td><b>Ly tâm bùn (slurry)</b></td><td>0,3 – 500</td><td><span class="yes">●</span></td><td><span class="no">○</span></td><td><span class="mid">◐</span></td><td><span class="yes">●</span></td><td><span class="no">○</span></td><td><span class="no">○</span></td><td>Bùn, cát, quặng, tro xỉ, đuôi quặng</td></tr>
+          <tr><td><b>Dẫn động từ / canned</b></td><td>0,3 – 300</td><td><span class="no">○</span></td><td><span class="no">○</span></td><td><span class="mid">◐</span></td><td><span class="mid">◐</span></td><td><span class="no">○</span></td><td><span class="no">○</span></td><td>Hóa chất độc, dễ cháy, dễ bay hơi (kín)</td></tr>
+          <tr><td><b>Bánh răng</b></td><td>20 – 250.000</td><td><span class="no">○</span></td><td><span class="no">○</span></td><td><span class="yes">●</span></td><td><span class="no">○</span></td><td><span class="yes">●</span></td><td><span class="mid">◐</span></td><td>Dầu, nhớt sạch, nhiên liệu, hóa dầu</td></tr>
+          <tr><td><b>Trục vít</b></td><td>1 – 500.000</td><td><span class="mid">◐</span></td><td><span class="mid">◐</span></td><td><span class="yes">●</span></td><td><span class="mid">◐</span></td><td><span class="yes">●</span></td><td><span class="no">○</span></td><td>Dầu nặng, mật rỉ, nhiên liệu, dầu bôi trơn</td></tr>
+          <tr><td><b>Khoang lũy tiến (PC)</b></td><td>1 – 1.000.000</td><td><span class="yes">●</span></td><td><span class="yes">●</span></td><td><span class="yes">●</span></td><td><span class="mid">◐</span></td><td><span class="yes">●</span></td><td><span class="mid">◐</span></td><td>Bùn thải, paste, nhớt cao lẫn hạt, thực phẩm</td></tr>
+          <tr><td><b>Cánh khế / lobe</b></td><td>50 – 500.000</td><td><span class="mid">◐</span></td><td><span class="yes">●</span></td><td><span class="mid">◐</span></td><td><span class="mid">◐</span></td><td><span class="yes">●</span></td><td><span class="mid">◐</span></td><td>Thực phẩm, dược, mỹ phẩm (vệ sinh, êm)</td></tr>
+          <tr><td><b>Cánh gạt</b></td><td>0,5 – 2.000</td><td><span class="no">○</span></td><td><span class="mid">◐</span></td><td><span class="yes">●</span></td><td><span class="no">○</span></td><td><span class="yes">●</span></td><td><span class="mid">◐</span></td><td>Dung môi, LPG, nhiên liệu nhẹ sạch</td></tr>
+          <tr><td><b>Màng khí nén (AODD)</b></td><td>1 – 50.000</td><td><span class="yes">●</span></td><td><span class="yes">●</span></td><td><span class="no">○</span></td><td><span class="no">○</span></td><td><span class="yes">●</span></td><td><span class="mid">◐</span></td><td>Hóa chất, sơn, bùn, chuyển rót đa năng</td></tr>
+          <tr><td><b>Piston / plunger</b></td><td>0,5 – 100.000</td><td><span class="no">○</span></td><td><span class="no">○</span></td><td><span class="yes">●</span></td><td><span class="no">○</span></td><td><span class="yes">●</span></td><td><span class="yes">●</span></td><td>Rửa cao áp, ép, phun, định lượng áp cao</td></tr>
+          <tr><td><b>Nhu động (peristaltic)</b></td><td>1 – 100.000</td><td><span class="yes">●</span></td><td><span class="yes">●</span></td><td><span class="mid">◐</span></td><td><span class="no">○</span></td><td><span class="yes">●</span></td><td><span class="yes">●</span></td><td>Hóa chất mài mòn, định lượng, dược/thực phẩm</td></tr>
+          <tr><td><b>Định lượng màng/piston</b></td><td>0,5 – 5.000</td><td><span class="no">○</span></td><td><span class="mid">◐</span></td><td><span class="yes">●</span></td><td><span class="no">○</span></td><td><span class="yes">●</span></td><td><span class="yes">●</span></td><td>Châm hóa chất xử lý nước, phụ gia chính xác</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="legend">Dải độ nhớt là vùng làm việc <i>hiệu quả</i> tham khảo; nhiều bơm vẫn chạy ngoài dải này nhưng cần giảm tốc/tăng công suất. Luôn kiểm tra đường đặc tính thực tế của nhà sản xuất.</p>
+  </div>
+</section>
+
+<!-- ============ 6. QUY TRÌNH & KHUYẾN CÁO ============ -->
+<section id="quytrinh">
+  <div class="wrap">
+    <h2><span class="num">06</span>Quy trình chọn bơm 7 bước & khuyến cáo</h2>
+    <p class="sub">Trình tự chuẩn để đi từ yêu cầu đến model cụ thể, áp dụng cho cả tư vấn nhanh lẫn thiết kế chi tiết.</p>
+
+    <ol class="steps">
+      <li><b>Đặc tả lưu chất.</b> Thành phần & hóa tính, nồng độ; độ nhớt ở nhiệt độ vận hành, tỷ trọng, % và kích thước hạt rắn, độ nhạy cắt, áp suất hơi, tính ăn mòn, độc hại/cháy nổ.</li>
+      <li><b>Xác định điểm làm việc.</b> Lưu lượng Q (m³/h), tổng cột áp/áp suất H (m hoặc bar), và tính <b>NPSHa</b> của hệ thống.</li>
+      <li><b>Chọn nhánh gốc.</b> Theo độ nhớt và đặc tính: ly tâm (loãng, lưu lượng lớn) hay thể tích (nhớt, áp cao, định lượng, nhạy cắt, có hạt).</li>
+      <li><b>Thu hẹp về dòng bơm.</b> Dùng công cụ ở mục 01 và ma trận mục 05 để chọn dòng cụ thể (đa tầng cho cột áp cao, slurry cho hạt, PC/lobe cho nhớt + vệ sinh…).</li>
+      <li><b>Hiệu chỉnh & kiểm tra.</b> Với ly tâm: hiệu chỉnh đường đặc tính theo HI 9.6.7 nếu &ge; 4,3 cSt; kiểm tra NPSHr &lt; NPSHa (biên ≥ 1,5 m). Với thể tích: chọn tốc độ, bố trí van an toàn.</li>
+      <li><b>Chọn vật liệu & kết cấu kín.</b> Theo ăn mòn + nhiệt độ (mục 07); chọn sealless nếu lưu chất nguy hại.</li>
+      <li><b>Đối chiếu tiêu chuẩn & vận hành.</b> API 610/685 (dầu khí), ANSI/ASME B73 (hóa chất), 3-A/FDA (thực phẩm–dược), ATEX (cháy nổ), UL/FM (PCCC); xét chế độ liên tục/gián đoạn, điều khiển, bảo trì.</li>
+    </ol>
+
+    <div class="grid g3" style="margin-top:8px">
+      <div class="card"><h4>Khuyến cáo cho kỹ sư bán hàng</h4><p class="muted" style="font-size:.9rem">Luôn hỏi đủ 4 nhóm: lưu chất, lưu lượng, cột áp, điều kiện lắp đặt. Một con số độ nhớt sai có thể dẫn đến chọn sai cả nhánh bơm. Khi độ nhớt &gt; 500 cP, mặc định nghĩ tới bơm thể tích.</p></div>
+      <div class="card"><h4>Khuyến cáo cho kỹ sư thiết kế</h4><p class="muted" style="font-size:.9rem">Tính NPSHa thực tế ở nhiệt độ cao nhất; áp dụng hiệu chỉnh độ nhớt HI; chọn điểm làm việc gần BEP (70–110%) để bơm ly tâm bền và hiệu quả; dự phòng van an toàn cho mọi bơm thể tích.</p></div>
+      <div class="card"><h4>Sai lầm thường gặp</h4><p class="muted" style="font-size:.9rem">Chọn bơm theo cột áp danh nghĩa mà bỏ qua độ nhớt thực; quên NPSH với lưu chất nóng/bay hơi; dùng bơm bánh răng cho lưu chất có hạt; chạy bơm ly tâm xa BEP gây rung, mài mòn, cavitation.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 7. VẬT LIỆU ============ -->
+<section id="vatlieu">
+  <div class="wrap">
+    <h2><span class="num">07</span>Vật liệu chế tạo theo lưu chất</h2>
+    <p class="sub">Chọn vật liệu phần ướt theo tổ hợp hóa chất + nồng độ + nhiệt độ. Không bao giờ chỉ dựa vào một bảng tra — điều kiện kết hợp nhiệt độ/nồng độ thường gây hỏng vật liệu mà bảng không thể hiện.</p>
+
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Vật liệu</th><th>Phạm vi phù hợp</th><th>Nhiệt độ</th><th>Ghi chú</th></tr></thead>
+        <tbody>
+          <tr><td><b>Gang / thép</b></td><td>Nước, dầu, lưu chất không ăn mòn</td><td>Tốt</td><td>Rẻ, phổ thông; không dùng cho hóa chất ăn mòn.</td></tr>
+          <tr><td><b>Inox 304</b></td><td>Nước, thực phẩm nhẹ, ăn mòn nhẹ</td><td>Tốt</td><td>Kém với clorua/axit mạnh.</td></tr>
+          <tr><td><b>Inox 316 / 316L</b></td><td>Hóa chất vừa, clorua, axit sunfuric &lt; 40%</td><td>Tốt</td><td>Mo tăng kháng clorua; điện hóa 316L cho thực phẩm–dược.</td></tr>
+          <tr><td><b>PVDF</b></td><td>H₂SO₄ tới 98%, HCl mọi nồng độ, HNO₃, dung môi</td><td>≤ ~135 °C</td><td>Cơ tính tốt, chuẩn cho chuyển hóa chất nặng.</td></tr>
+          <tr><td><b>PTFE (lót / gioăng)</b></td><td>Gần như mọi hóa chất, axit/kiềm đậm đặc</td><td>−200…+260 °C</td><td>Kháng hóa chất tốt nhất; dùng làm lót & màng bơm.</td></tr>
+          <tr><td><b>PP</b></td><td>Axit/kiềm loãng–vừa, muối</td><td>≤ ~80 °C</td><td>Rẻ; giới hạn nhiệt và dung môi.</td></tr>
+          <tr><td><b>Cao su / hợp kim cứng</b></td><td>Bùn, cát, quặng mài mòn</td><td>Tùy loại</td><td>Lót cao su hoặc hợp kim Ni-hard/cao crôm cho bơm slurry.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="legend">Gioăng/phớt (EPDM, FKM/Viton, PTFE, Kalrez) chọn theo môi chất và nhiệt độ riêng. Với lưu chất nguy hại ưu tiên kết cấu không phớt.</p>
+
+    <h3 style="margin-top:26px">Bảng tra: Lưu chất ↔ Vật liệu phần ướt</h3>
+    <p class="sub">Góc nhìn ứng dụng — tra từ <i>lưu chất</i> ra <i>vật liệu nên dùng</i>. Ký hiệu: <span class="yes">●</span> phù hợp · <span class="mid">◐</span> hạn chế/điều kiện · <span class="no">○</span> không nên. Luôn xét kết hợp <b>nồng độ × nhiệt độ</b>.</p>
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr><th>Lưu chất</th><th>Gang/Thép</th><th>Inox 316L</th><th>PP</th><th>PVDF</th><th>PTFE</th><th>Cao su / HK cứng</th><th>Khuyến nghị</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><b>Nước sạch / nước thải nhẹ</b></td><td><span class="yes">●</span></td><td><span class="yes">●</span></td><td><span class="yes">●</span></td><td><span class="yes">●</span></td><td><span class="yes">●</span></td><td><span class="mid">◐</span></td><td>Gang/304–316 kinh tế</td></tr>
+          <tr><td><b>Nước biển / clorua cao</b></td><td><span class="no">○</span></td><td><span class="mid">◐</span></td><td><span class="yes">●</span></td><td><span class="yes">●</span></td><td><span class="yes">●</span></td><td><span class="mid">◐</span></td><td>Duplex / PVDF (316L dễ rỗ điểm)</td></tr>
+          <tr><td><b>H₂SO₄ loãng (&lt;40%)</b></td><td><span class="no">○</span></td><td><span class="mid">◐</span></td><td><span class="yes">●</span></td><td><span class="yes">●</span></td><td><span class="yes">●</span></td><td><span class="no">○</span></td><td>PP/PVDF</td></tr>
+          <tr><td><b>H₂SO₄ đậm đặc (~98%)</b></td><td><span class="no">○</span></td><td><span class="no">○</span></td><td><span class="mid">◐</span></td><td><span class="yes">●</span></td><td><span class="yes">●</span></td><td><span class="no">○</span></td><td>PVDF / lót PTFE</td></tr>
+          <tr><td><b>HCl (mọi nồng độ)</b></td><td><span class="no">○</span></td><td><span class="no">○</span></td><td><span class="yes">●</span></td><td><span class="yes">●</span></td><td><span class="yes">●</span></td><td><span class="mid">◐</span></td><td>PVDF / PTFE; không dùng kim loại</td></tr>
+          <tr><td><b>NaOH / kiềm</b></td><td><span class="mid">◐</span></td><td><span class="yes">●</span></td><td><span class="yes">●</span></td><td><span class="yes">●</span></td><td><span class="yes">●</span></td><td><span class="mid">◐</span></td><td>316L / PP</td></tr>
+          <tr><td><b>Dung môi hữu cơ</b></td><td><span class="yes">●</span></td><td><span class="yes">●</span></td><td><span class="no">○</span></td><td><span class="mid">◐</span></td><td><span class="yes">●</span></td><td><span class="no">○</span></td><td>316L / PTFE (tránh PP)</td></tr>
+          <tr><td><b>Dầu / nhiên liệu</b></td><td><span class="yes">●</span></td><td><span class="yes">●</span></td><td><span class="mid">◐</span></td><td><span class="yes">●</span></td><td><span class="yes">●</span></td><td><span class="yes">●</span></td><td>Gang/thép + gioăng FKM/Viton</td></tr>
+          <tr><td><b>Thực phẩm / dược</b></td><td><span class="no">○</span></td><td><span class="yes">●</span></td><td><span class="mid">◐</span></td><td><span class="yes">●</span></td><td><span class="yes">●</span></td><td><span class="mid">◐</span></td><td>316L điện hóa + gioăng FDA</td></tr>
+          <tr><td><b>Bùn / cát mài mòn</b></td><td><span class="mid">◐</span></td><td><span class="mid">◐</span></td><td><span class="no">○</span></td><td><span class="no">○</span></td><td><span class="no">○</span></td><td><span class="yes">●</span></td><td>Lót cao su / hợp kim cao crôm</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="legend">Giới hạn nhiệt tham khảo: PP ≤ ~80 °C · PVDF ≤ ~135 °C · PTFE −200…+260 °C · Inox/gang theo thiết kế. Bảng tra không thay thế kiểm chứng với điều kiện thực tế (nồng độ, tạp chất, nhiệt độ đỉnh).</p>
+  </div>
+</section>
+
+<!-- ============ 8. TÀI LIỆU ============ -->
+<section id="tailieu">
+  <div class="wrap">
+    <h2><span class="num">08</span>Tài liệu tham khảo</h2>
+    <p class="sub">Các nguồn kỹ thuật được tổng hợp cho phần phân tích tương quan và ngưỡng kỹ thuật.</p>
+    <ul class="ref">
+      <li>Hydraulic Institute — <a href="https://www.pumpsandsystems.com/how-make-viscosity-corrections-centrifugal-pumps" target="_blank" rel="noopener">How to Make Viscosity Corrections for Centrifugal Pumps (HI 9.6.7)</a>, Pumps &amp; Systems.</li>
+      <li><a href="https://myengineeringtools.com/references/pages/selection_guide_for_centrifugal_vs._positive_displacement_pumps.html" target="_blank" rel="noopener">Selection Guide for Centrifugal vs. Positive Displacement Pumps</a> — MyEngineeringTools.</li>
+      <li><a href="https://www.daepumps.com/resources/positive-displacement-pump-vs-centrifugal-pump/" target="_blank" rel="noopener">Positive Displacement vs Centrifugal Pumps — The Ultimate Guide</a>, DAE Pumps.</li>
+      <li><a href="https://ntgdpump.com/difference-between-a-positive-and-non-positive-displacement-pump/" target="_blank" rel="noopener">Positive Displacement vs Centrifugal — Operating Limits &amp; Selection (2026)</a>, NTGD Pump.</li>
+      <li><a href="https://www.libertyprocess.com/when-to-use-progressive-cavity-pumps.html" target="_blank" rel="noopener">When to Use Progressive Cavity Pumps</a> — Liberty Process.</li>
+      <li><a href="https://www.michael-smith-engineers.co.uk/resources/useful-info/pumps-for-shear-sensitive-fluids" target="_blank" rel="noopener">Pumps for Shear-Sensitive Fluids</a> — Michael Smith Engineers.</li>
+      <li><a href="https://www.pumpsandsystems.com/impellers-slurry-pumps" target="_blank" rel="noopener">Impellers in Slurry Pumps</a> — Pumps &amp; Systems; <a href="https://www.metso.com/globalassets/insights/ebooks/2020_12_slurry_pump_basic_en_web.pdf" target="_blank" rel="noopener">Metso Slurry Pump Handbook</a>.</li>
+      <li><a href="https://www.michael-smith-engineers.co.uk/resources/useful-info/air-operated-double-diaphragm-pumps" target="_blank" rel="noopener">Air Operated Double Diaphragm Pumps</a> — Michael Smith Engineers.</li>
+      <li><a href="https://www.pumpsandsystems.com/understanding-npsh-its-effect-pump-selection-setup" target="_blank" rel="noopener">Understanding NPSH &amp; Its Effect on Pump Selection</a> — Pumps &amp; Systems.</li>
+      <li><a href="https://haywardtyler.com/resource/sealless-pumps-advantages-of-canned-motor-pumps-vs-mag-drive-pumps/" target="_blank" rel="noopener">Sealless Pumps: Canned Motor vs Mag Drive</a> — Hayward Tyler.</li>
+      <li><a href="https://hollandapt.com/density-and-specific-gravity-how-they-affect-pump-selection/" target="_blank" rel="noopener">Density &amp; Specific Gravity — How They Affect Pump Selection</a> — Holland Applied Technologies.</li>
+      <li><a href="https://www.michael-smith-engineers.co.uk/resources/useful-info/chemical-compatibility" target="_blank" rel="noopener">Pump Corrosion &amp; Chemical Compatibility</a>; <a href="https://pumpport.com/en/chemical-compatibility-chart/" target="_blank" rel="noopener">Chemical Compatibility Chart (PP/PVDF/PTFE/SS316)</a>.</li>
+      <li><a href="https://www.veritoengineering.com/blogs/different-types-of-dosing-pumps/" target="_blank" rel="noopener">7 Types of Dosing Pumps</a> — Verito Engineering.</li>
+    </ul>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <p><b>Ứng dụng Lựa chọn Máy bơm Công nghiệp</b> — công cụ định hướng kỹ thuật. Kết quả mang tính tham khảo và phải được xác minh bằng đường đặc tính của nhà sản xuất, tính toán NPSH và tiêu chuẩn áp dụng cho dự án cụ thể.</p>
+    <p class="muted">Cập nhật: 06/2026 · Đơn vị độ nhớt cP ≈ cSt khi SG ≈ 1.</p>
+  </div>
+</footer>
+
+<script>
+/* ================= DỮ LIỆU BƠM ================= */
+const PUMPS = [
+ {id:'end_suction', name:'Bơm ly tâm hút cuối', en:'End-Suction Centrifugal', fam:'Ly tâm', cls:'cen',
+  vmin:0.3, vmax:300, solids:0, gentle:0, flow:[1,3], head:'high', prime:false, hyg:false, sealless:false, dose:0,
+  desc:'Dòng ly tâm phổ thông nhất: lưu lượng lớn, cột áp trung bình–cao, chi phí thấp.'},
+ {id:'multistage', name:'Bơm ly tâm đa tầng cánh', en:'Multistage Centrifugal', fam:'Ly tâm', cls:'cen',
+  vmin:0.3, vmax:200, solids:0, gentle:0, flow:[1,3], head:'vhigh', prime:false, hyg:false, sealless:false, dose:0,
+  desc:'Nhiều tầng cánh nối tiếp → cột áp rất cao (cấp nước cao tầng, lò hơi, RO, tăng áp).'},
+ {id:'split_case', name:'Bơm ly tâm hai cửa hút (split case)', en:'Split Casing', fam:'Ly tâm', cls:'cen',
+  vmin:0.3, vmax:200, solids:0, gentle:0, flow:[3,4], head:'high', prime:false, hyg:false, sealless:false, dose:0,
+  desc:'Hút hai phía, lưu lượng rất lớn, hiệu suất cao (cấp nước, PCCC, tưới tiêu).'},
+ {id:'vertical', name:'Bơm trục đứng / tuabin / chìm', en:'Vertical Turbine / Submersible', fam:'Ly tâm', cls:'cen',
+  vmin:0.3, vmax:200, solids:1, gentle:0, flow:[2,4], head:'vhigh', prime:true, hyg:false, sealless:false, dose:0,
+  desc:'Đặt chìm/giếng khoan/bể sâu, không cần mồi, tiết kiệm mặt bằng.'},
+ {id:'slurry', name:'Bơm ly tâm bùn (slurry)', en:'Slurry Pump', fam:'Ly tâm', cls:'cen',
+  vmin:0.3, vmax:500, solids:3, gentle:0, flow:[2,4], head:'high', prime:false, hyg:false, sealless:false, dose:0,
+  desc:'Cánh hở/bán hở, vật liệu chống mài mòn (hợp kim cứng, lót cao su) cho bùn, cát, quặng.'},
+ {id:'sealless', name:'Bơm ly tâm dẫn động từ / động cơ đóng hộp', en:'Mag-Drive / Canned Motor', fam:'Ly tâm', cls:'cen',
+  vmin:0.3, vmax:300, solids:0, gentle:0, flow:[1,3], head:'high', prime:false, hyg:false, sealless:true, dose:0,
+  desc:'Không phớt cơ khí → kín tuyệt đối, lý tưởng cho hóa chất độc/dễ cháy/bay hơi.'},
+ {id:'gear', name:'Bơm bánh răng', en:'Gear Pump', fam:'Thể tích quay', cls:'pd',
+  vmin:20, vmax:250000, solids:0, gentle:0, flow:[0,2], head:'vhigh', prime:true, hyg:false, sealless:false, dose:1,
+  desc:'Lưu lượng đều, áp suất cao, lý tưởng cho dầu, nhớt sạch không lẫn hạt.'},
+ {id:'screw', name:'Bơm trục vít', en:'Screw Pump', fam:'Thể tích quay', cls:'pd',
+  vmin:1, vmax:500000, solids:1, gentle:2, flow:[1,3], head:'vhigh', prime:true, hyg:false, sealless:false, dose:0,
+  desc:'Dòng chảy êm, gần như không xung, cho lưu chất nhớt cao (dầu nặng, mật rỉ, nhiên liệu).'},
+ {id:'pc', name:'Bơm khoang lũy tiến (trục vít lệch tâm)', en:'Progressive Cavity', fam:'Thể tích quay', cls:'pd',
+  vmin:1, vmax:1000000, solids:3, gentle:3, flow:[0,3], head:'vhigh', prime:true, hyg:true, sealless:false, dose:2,
+  desc:'Dải độ nhớt rộng nhất (1–1.000.000 cSt), xử lý đồng thời nhớt cao + hàm rắn + nhạy cắt.'},
+ {id:'lobe', name:'Bơm cánh khế / thùy (lobe)', en:'Rotary Lobe', fam:'Thể tích quay', cls:'pd',
+  vmin:50, vmax:500000, solids:2, gentle:3, flow:[1,3], head:'medium', prime:true, hyg:true, sealless:false, dose:1,
+  desc:'Bơm vệ sinh, rotor không tiếp xúc, êm dịu với thực phẩm/dược/mỹ phẩm.'},
+ {id:'vane', name:'Bơm cánh gạt', en:'Vane Pump', fam:'Thể tích quay', cls:'pd',
+  vmin:0.5, vmax:2000, solids:0, gentle:1, flow:[0,2], head:'high', prime:true, hyg:false, sealless:false, dose:1,
+  desc:'Lưu lượng đều cho lưu chất sạch độ nhớt thấp–trung (dung môi, LPG, nhiên liệu nhẹ).'},
+ {id:'aodd', name:'Bơm màng khí nén (AODD)', en:'Air-Operated Double Diaphragm', fam:'Thể tích đối ứng', cls:'pd',
+  vmin:1, vmax:50000, solids:2, gentle:3, flow:[0,2], head:'medium', prime:true, hyg:true, sealless:true, dose:1,
+  desc:'Vạn năng: tự mồi, chạy khô an toàn, xử lý hàm rắn/ăn mòn/nhạy cắt; chống cháy nổ tự nhiên.'},
+ {id:'piston', name:'Bơm piston / plunger', en:'Piston / Plunger', fam:'Thể tích đối ứng', cls:'pd',
+  vmin:0.5, vmax:100000, solids:0, gentle:0, flow:[0,2], head:'vhigh', prime:true, hyg:false, sealless:false, dose:3,
+  desc:'Áp suất cực cao (rửa cao áp, ép, phun), định lượng chính xác.'},
+ {id:'peristaltic', name:'Bơm nhu động', en:'Peristaltic / Hose', fam:'Thể tích quay', cls:'pd',
+  vmin:1, vmax:100000, solids:3, gentle:3, flow:[0,2], head:'medium', prime:true, hyg:true, sealless:true, dose:2,
+  desc:'Lưu chất chỉ tiếp xúc ống → không nhiễm bẩn, xử lý mài mòn cao, nhạy cắt, định lượng tốt.'},
+ {id:'metering', name:'Bơm định lượng màng / piston', en:'Metering / Dosing', fam:'Định lượng', cls:'dose',
+  vmin:0.5, vmax:5000, solids:0, gentle:2, flow:[0,0], head:'vhigh', prime:true, hyg:false, sealless:true, dose:3,
+  desc:'Định lượng hóa chất chính xác (±0,1–1%), lưu lượng nhỏ, áp suất cao, chống rò rỉ.'}
+];
+
+const VMID = {v1:5, v2:50, v3:300, v4:2000, v5:20000, v6:100000};
+const VLAB = {v1:'< 10 cP', v2:'10–100 cP', v3:'100–500 cP', v4:'500–5.000 cP', v5:'5.000–50.000 cP', v6:'> 50.000 cP'};
+const HMAP = {low:1, medium:2, high:3, vhigh:4};
+const FMAP = {dosing:0, small:1, medium:2, large:3, vlarge:4};
+const SOLIDS = {none:0, fine:1, medium:2, large:3};
+const SOLIDLAB = {fine:'hạt mịn', medium:'hạt trung bình', large:'hạt lớn/dạng sợi'};
+
+/* set hidden hygienic based on fluid type */
+function deriveHyg(inp){ return (inp.fluid==='thucpham')?'yes':'no'; }
+
+function scorePump(p, inp){
+  let s = 50; const reasons = [], cautions = [];
+  const v = VMID[inp.visc];
+
+  /* --- Độ nhớt --- */
+  if(v >= p.vmin && v <= p.vmax){
+    s += 22; reasons.push('Độ nhớt '+VLAB[inp.visc]+' nằm trong vùng làm việc hiệu quả của bơm.');
+  } else if(v < p.vmin){
+    if(p.fam.indexOf('Thể tích')>=0 || p.fam==='Định lượng'){
+      s -= 5; cautions.push('Lưu chất khá loãng so với bơm thể tích — hiệu suất thể tích có thể giảm do rò qua khe hở.');
+    } else { s += 8; }
+  } else { /* v > vmax */
+    if(p.fam==='Ly tâm'){
+      s -= 36; cautions.push('Độ nhớt vượt giới hạn bơm ly tâm — sụt mạnh cột áp/hiệu suất, nên chuyển sang bơm thể tích.');
+    } else {
+      s -= 16; cautions.push('Độ nhớt cao hơn dải tối ưu — cần giảm tốc độ và tăng công suất động cơ.');
+    }
+  }
+
+  /* --- Hàm rắn --- */
+  const sreq = SOLIDS[inp.solids];
+  if(sreq > 0){
+    if(p.solids >= sreq){
+      s += 16; reasons.push('Xử lý tốt '+SOLIDLAB[inp.solids]+' nhờ kết cấu thông thoáng / chống mài mòn.');
+    } else {
+      s -= 30; cautions.push('Khe hở kín — '+SOLIDLAB[inp.solids]+' sẽ gây kẹt và mài mòn nhanh, không khuyến cáo.');
+    }
+  }
+
+  /* --- Độ nhạy cắt --- */
+  const sh = {no:0, mid:1, high:2}[inp.shear];
+  if(sh === 2){
+    if(p.gentle >= 3){ s += 15; reasons.push('Bơm êm dịu, bảo toàn cấu trúc lưu chất nhạy cắt (nhũ tương, polymer, thực phẩm).'); }
+    else if(p.gentle <= 1){ s -= 22; cautions.push('Lực cắt cao có thể phá vỡ cấu trúc lưu chất rất nhạy cắt.'); }
+  } else if(sh === 1){
+    if(p.gentle >= 2){ s += 5; }
+    else if(p.gentle === 0){ s -= 6; }
+  }
+
+  /* --- Lưu lượng --- */
+  const f = FMAP[inp.flow];
+  if(f >= p.flow[0] && f <= p.flow[1]){
+    s += 12; reasons.push('Đáp ứng dải lưu lượng yêu cầu.');
+  } else if(f > p.flow[1]){
+    s -= 20; cautions.push('Lưu lượng yêu cầu vượt khả năng kinh tế của dòng bơm này (cần ghép nhiều bơm).');
+  } else {
+    s -= 8; cautions.push('Bơm thiên về lưu lượng lớn — dư công suất cho yêu cầu nhỏ/định lượng.');
+  }
+
+  /* --- Cột áp / áp suất --- */
+  const hreq = HMAP[inp.head], hcap = HMAP[p.head];
+  if(hcap >= hreq){
+    s += 12; if(hreq >= 3) reasons.push('Tạo được cột áp/áp suất cao theo yêu cầu.');
+  } else {
+    s -= 24; cautions.push('Không đạt cột áp/áp suất yêu cầu.');
+  }
+
+  /* --- Định lượng --- */
+  if(inp.dose === 'yes'){
+    if(p.dose >= 3){ s += 20; reasons.push('Định lượng chính xác theo thể tích (độ chính xác cao).'); }
+    else if(p.dose === 2){ s += 12; reasons.push('Định lượng tốt theo thể tích (~±1%).'); }
+    else { s -= 22; cautions.push('Không phù hợp định lượng chính xác.'); }
+  }
+
+  /* --- Tự mồi --- */
+  if(inp.prime === 'yes'){
+    if(p.prime){ s += 8; reasons.push('Có khả năng tự mồi / hút sâu.'); }
+    else { s -= 12; cautions.push('Không tự mồi — cần bố trí hút ngập hoặc hệ thống mồi.'); }
+  }
+
+  /* --- Vệ sinh --- */
+  if(inp.hyg === 'yes'){
+    if(p.hyg){ s += 13; reasons.push('Đạt yêu cầu vệ sinh (CIP/SIP, thực phẩm–dược).'); }
+    else { s -= 18; cautions.push('Khó vệ sinh / không đạt chuẩn hygienic.'); }
+  }
+
+  /* --- Độc / cháy / bay hơi --- */
+  if(inp.hazard === 'yes'){
+    if(p.sealless){ s += 16; reasons.push('Kết cấu kín/không phớt — an toàn cho lưu chất độc, dễ cháy, dễ bay hơi.'); }
+    else { s -= 14; cautions.push('Dùng phớt cơ khí — rủi ro rò rỉ; cân nhắc loại không phớt (dẫn động từ/canned/màng/nhu động).'); }
+  }
+
+  /* --- Ăn mòn mạnh: nudge cho loại dễ làm phi kim/kín --- */
+  if(inp.corr === 'strong'){
+    if(['aodd','sealless','peristaltic','metering','pc'].includes(p.id)){ s += 5; }
+  }
+
+  /* --- Gợi ý theo loại lưu chất --- */
+  const fl = inp.fluid;
+  const nudge = {
+    slurry:   {slurry:10, pc:8, peristaltic:7, aodd:5, gear:-15, vane:-15, end_suction:-8, multistage:-10, sealless:-8},
+    dau:      {gear:10, screw:9, vane:4},
+    thucpham: {lobe:10, pc:6, peristaltic:6, aodd:4},
+    dungmoi:  {sealless:8, vane:5, gear:3},
+    hoachat:  {sealless:7, aodd:6, peristaltic:5, metering:4},
+    polymer:  {pc:10, lobe:7, screw:5, aodd:4, gear:-8},
+    nuocthai: {vertical:8, pc:6, peristaltic:5, aodd:5, gear:-12, vane:-12},
+    nuoc:     {end_suction:4, split_case:3, multistage:3, vertical:3}
+  }[fl] || {};
+  if(nudge[p.id]){ s += nudge[p.id]; }
+
+  s = Math.max(2, Math.min(100, Math.round(s)));
+  return {score:s, reasons:reasons.slice(0,5), cautions:cautions.slice(0,4)};
+}
+
+/* --- Khuyến cáo vật liệu --- */
+function materialRec(inp){
+  const c = inp.corr, t = inp.temp, fl = inp.fluid;
+  if(fl === 'thucpham') return 'Vật liệu phần ướt: Inox 316L điện hóa, gioăng FDA (EPDM/silicone), thiết kế CIP/SIP.';
+  if(c === 'strong'){
+    if(t === 'hot') return 'Ăn mòn mạnh ở nhiệt độ cao → lót PTFE hoặc gốm; gioăng PTFE/Kalrez; ưu tiên kết cấu không phớt.';
+    return 'Ăn mòn mạnh → PVDF hoặc lót PTFE (axit/kiềm đậm đặc); cân nhắc bơm không phớt (dẫn động từ/màng).';
+  }
+  if(c === 'mild'){
+    return 'Ăn mòn nhẹ → Inox 316/316L; với clorua cao cân nhắc duplex hoặc phủ.';
+  }
+  if(fl === 'slurry') return 'Vật liệu chống mài mòn: hợp kim cao crôm/Ni-hard hoặc lót cao su; phớt chịu hạt.';
+  if(fl === 'dau' || fl === 'dungmoi') return 'Gang/thép hoặc Inox 316 tùy tiêu chuẩn; gioăng FKM/Viton cho hydrocarbon.';
+  return 'Lưu chất không ăn mòn → Gang hoặc Inox 304 là đủ và kinh tế.';
+}
+
+/* ================= CHẠY & HIỂN THỊ ================= */
+function readForm(){
+  return {
+    fluid:  val('f_fluid'),
+    visc:   val('f_visc'),
+    sg:     val('f_sg'),
+    solids: val('f_solids'),
+    shear:  val('f_shear'),
+    flow:   val('f_flow'),
+    head:   val('f_head'),
+    temp:   val('f_temp'),
+    corr:   val('f_corr'),
+    hazard: val('f_hazard'),
+    dose:   val('f_dose'),
+    prime:  val('f_prime'),
+    hyg:    'no'
+  };
+}
+function val(id){ return document.getElementById(id).value; }
+
+function runSelect(){
+  const inp = readForm();
+  inp.hyg = deriveHyg(inp);
+
+  const ranked = PUMPS.map(p => Object.assign({p}, scorePump(p, inp)))
+                      .sort((a,b)=> b.score - a.score);
+  const top = ranked.filter(r => r.score >= 45).slice(0,4);
+  const list = top.length ? top : ranked.slice(0,3);
+
+  const box = document.getElementById('results');
+  let html = '<h3 style="margin-bottom:6px">Kết quả gợi ý</h3>'+
+    '<p class="muted" style="font-size:.9rem;margin-top:0">Xếp theo điểm phù hợp tổng hợp 8 tiêu chí. '+
+    'Vật liệu đề xuất: <b>'+materialRec(inp)+'</b></p>';
+
+  const rankLabel = ['PHÙ HỢP NHẤT','LỰA CHỌN 2','LỰA CHỌN 3','LỰA CHỌN 4'];
+  const rankCls = ['','r2','r3','r3'];
+
+  list.forEach((r,i)=>{
+    const p = r.p;
+    html += '<div class="res-card'+(i===0?' top':'')+'">';
+    html += '<div class="res-head"><div>'+
+      '<div class="res-title">'+p.name+' <span class="res-en">· '+p.en+'</span></div>'+
+      '<span class="pill '+p.cls+'">'+p.fam+'</span></div>'+
+      '<span class="rank '+rankCls[i]+'">'+rankLabel[i]+'</span></div>';
+    html += '<div class="scorebar"><i style="width:'+r.score+'%"></i></div>';
+    html += '<div class="scoreval">Điểm phù hợp: <b>'+r.score+'/100</b></div>';
+    html += '<p style="margin:.6em 0 .2em;font-size:.92rem">'+p.desc+'</p>';
+    if(r.reasons.length){
+      html += '<ul class="reasons">'+ r.reasons.map(x=>'<li>'+x+'</li>').join('') +'</ul>';
+    }
+    if(r.cautions.length){
+      html += '<ul class="cautions">'+ r.cautions.map(x=>'<li>'+x+'</li>').join('') +'</ul>';
+    }
+    html += '</div>';
+  });
+
+  html += '<p class="muted" style="font-size:.82rem;margin-top:8px">⚠ Kết quả mang tính định hướng. '+
+    'Hãy xác minh bằng đường đặc tính của nhà sản xuất và tính toán NPSH trước khi quyết định.</p>';
+
+  box.innerHTML = html;
+}
+
+function resetForm(){
+  ['f_fluid','f_visc','f_solids','f_shear','f_hazard','f_dose','f_prime','f_corr'].forEach(id=>document.getElementById(id).selectedIndex=0);
+  document.getElementById('f_sg').value='normal';
+  document.getElementById('f_flow').value='medium';
+  document.getElementById('f_head').value='medium';
+  document.getElementById('f_temp').value='ambient';
+  document.getElementById('results').innerHTML='';
+  runSelect();
+}
+
+/* cập nhật ngay khi đổi lựa chọn */
+['f_fluid','f_visc','f_sg','f_solids','f_shear','f_flow','f_head','f_temp','f_corr','f_hazard','f_dose','f_prime']
+  .forEach(id=>document.getElementById(id).addEventListener('change', runSelect));
+
+/* ================= BIỂU ĐỒ ================= */
+const GRID='#27395a', TICK='#9fb0c8';
+function mkChart(){
+  if(typeof Chart === 'undefined') return;
+  Chart.defaults.color = TICK;
+  Chart.defaults.font.family = 'Segoe UI, system-ui, sans-serif';
+
+  /* H-Q */
+  new Chart(document.getElementById('chartHQ'), {
+    type:'line',
+    data:{
+      labels:[0,10,20,30,40,50,60,70,80,90,100],
+      datasets:[
+        {label:'Ly tâm (H-Q dốc)', data:[100,99,97,93,87,78,66,52,36,19,0],
+         borderColor:'#3aa0d8', backgroundColor:'rgba(58,160,216,.08)', tension:.35, fill:true, pointRadius:0, borderWidth:3},
+        {label:'Thể tích (gần thẳng đứng)', data:[100,99.5,99,98.5,98,97.5,97,96.5,96,95.5,95],
+         borderColor:'#e8a85a', backgroundColor:'rgba(232,168,90,.06)', tension:.05, fill:false, pointRadius:0, borderWidth:3, borderDash:[6,4]}
+      ]
+    },
+    options:{responsive:true, plugins:{legend:{labels:{boxWidth:14}}},
+      scales:{
+        x:{title:{display:true,text:'Lưu lượng Q (%)'}, grid:{color:GRID}},
+        y:{title:{display:true,text:'Cột áp H (%)'}, grid:{color:GRID}, min:0, max:105}
+      }}
+  });
+
+  /* Hiệu suất theo độ nhớt */
+  new Chart(document.getElementById('chartVisc'), {
+    type:'line',
+    data:{
+      labels:[1,10,50,100,200,500,1000,5000,20000,100000],
+      datasets:[
+        {label:'Ly tâm — hiệu suất tương đối', data:[100,98,93,85,72,50,30,12,4,1],
+         borderColor:'#3aa0d8', backgroundColor:'rgba(58,160,216,.10)', tension:.3, fill:true, pointRadius:2, borderWidth:3},
+        {label:'Thể tích — hiệu suất thể tích', data:[60,72,84,89,92,94,95,96,97,97],
+         borderColor:'#e8a85a', backgroundColor:'rgba(232,168,90,.08)', tension:.3, fill:false, pointRadius:2, borderWidth:3}
+      ]
+    },
+    options:{responsive:true, plugins:{legend:{labels:{boxWidth:14}}},
+      scales:{
+        x:{type:'logarithmic', title:{display:true,text:'Độ nhớt (cP, log)'}, grid:{color:GRID}},
+        y:{title:{display:true,text:'Hiệu suất (%)'}, grid:{color:GRID}, min:0, max:105}
+      }}
+  });
+
+  /* Dải độ nhớt làm việc (floating bars) */
+  const rng = [
+    ['Ly tâm', 0.3, 1000, '#3aa0d8'],
+    ['Cánh gạt', 0.5, 2000, '#3aa0d8'],
+    ['Màng AODD', 1, 50000, '#e8a85a'],
+    ['Bánh răng', 20, 250000, '#e8a85a'],
+    ['Nhu động', 1, 100000, '#e8a85a'],
+    ['Piston/plunger', 0.5, 100000, '#e8a85a'],
+    ['Cánh khế (lobe)', 50, 500000, '#e8a85a'],
+    ['Trục vít', 1, 500000, '#e8a85a'],
+    ['Khoang lũy tiến (PC)', 1, 1000000, '#e8a85a']
+  ];
+  new Chart(document.getElementById('chartRange'), {
+    type:'bar',
+    data:{
+      labels: rng.map(r=>r[0]),
+      datasets:[{
+        label:'Dải độ nhớt làm việc (cP)',
+        data: rng.map(r=>[r[1], r[2]]),
+        backgroundColor: rng.map(r=>r[3]+'cc'),
+        borderColor: rng.map(r=>r[3]),
+        borderWidth:1, borderRadius:5, barThickness:18
+      }]
+    },
+    options:{indexAxis:'y', responsive:true,
+      plugins:{legend:{display:false},
+        tooltip:{callbacks:{label:(c)=>'≈ '+c.raw[0]+' – '+c.raw[1].toLocaleString('vi')+' cP'}}},
+      scales:{
+        x:{type:'logarithmic', min:0.1, max:1000000, title:{display:true,text:'Độ nhớt (cP, trục log)'}, grid:{color:GRID}},
+        y:{grid:{color:GRID}}
+      }}
+  });
+
+  /* BEP: H-Q + hiệu suất + vùng 70-110% BEP */
+  const bepEl = document.getElementById('chartBEP');
+  if(bepEl){
+    new Chart(bepEl, {
+      type:'line',
+      data:{
+        labels:[0,20,40,60,70,80,90,100,110,120,140],
+        datasets:[
+          {label:'Vùng khuyến nghị (70–110% BEP)', data:[null,null,null,null,105,105,105,105,105,null,null],
+           backgroundColor:'rgba(54,198,146,.14)', borderWidth:0, pointRadius:0, fill:'origin', yAxisID:'y', order:9},
+          {label:'Cột áp H (%)', data:[100,98,95,90,87,83,78,72,66,58,42],
+           borderColor:'#3aa0d8', backgroundColor:'rgba(58,160,216,.05)', tension:.3, pointRadius:0, borderWidth:3, yAxisID:'y', order:1},
+          {label:'Hiệu suất (%)', data:[0,28,50,66,74,80,84,85,83,78,64],
+           borderColor:'#e8a85a', tension:.35, pointRadius:0, borderWidth:3, yAxisID:'y1', order:1},
+          {label:'BEP', data:[null,null,null,null,null,null,null,85,null,null,null],
+           borderColor:'#36c692', backgroundColor:'#36c692', pointRadius:6, pointHoverRadius:7, showLine:false, yAxisID:'y1', order:0}
+        ]
+      },
+      options:{responsive:true, interaction:{intersect:false, mode:'index'},
+        plugins:{legend:{labels:{boxWidth:14, filter:(it)=>it.text!=='Vùng khuyến nghị (70–110% BEP)'? true:true}}},
+        scales:{
+          x:{title:{display:true,text:'Lưu lượng (% so với BEP)'}, grid:{color:GRID}},
+          y:{title:{display:true,text:'Cột áp H (%)'}, grid:{color:GRID}, min:0, max:110, position:'left'},
+          y1:{title:{display:true,text:'Hiệu suất (%)'}, grid:{drawOnChartArea:false}, min:0, max:110, position:'right'}
+        }}
+    });
+  }
+}
+
+/* ================= TRA CỨU PHÂN LOẠI (số hóa mind map) ================= */
+const CATLABEL = {cen:'Ly tâm / động học', recip:'Thể tích — đối ứng', rotary:'Thể tích — quay', dose:'Định lượng'};
+const CATCLS = {cen:'cen', recip:'pd', rotary:'pd', dose:'dose'};
+const CATALOG = [
+ {cat:'cen', vn:'Bơm ly tâm hút cuối', en:'End-Suction Pump', note:'Phổ thông nhất; nước & lưu chất loãng, lưu lượng lớn, cột áp trung bình–cao.'},
+ {cat:'cen', vn:'Bơm hai cửa hút', en:'Split Casing Pump', note:'Lưu lượng rất lớn, hiệu suất cao; cấp nước, PCCC, tưới tiêu.'},
+ {cat:'cen', vn:'Bơm trục ngang đa tầng cánh', en:'Horizontal Multi-Stage', note:'Cột áp rất cao; cấp nước cao tầng, lò hơi, RO.'},
+ {cat:'cen', vn:'Bơm nội tuyến', en:'Vertical In-line', note:'Lắp thẳng trên ống, tiết kiệm mặt bằng; HVAC, cấp nước.'},
+ {cat:'cen', vn:'Bơm trục đứng đa tầng', en:'Vertical Multi-Stage', note:'Tăng áp cột áp cao, chiếm ít diện tích.'},
+ {cat:'cen', vn:'Bơm tuabin trục đứng', en:'Vertical Turbine', note:'Hút từ bể/giếng sâu; cấp nước, tưới, PCCC.'},
+ {cat:'cen', vn:'Bơm chìm nước thải', en:'Submersible Pump', note:'Đặt chìm trong hố thu; nước thải có cặn.'},
+ {cat:'cen', vn:'Bơm chìm giếng khoan', en:'Borehole Pump', note:'Giếng sâu đường kính nhỏ; cấp nước ngầm.'},
+ {cat:'cen', vn:'Bơm bể trục đứng', en:'Vertical Sump Pump', note:'Hút cạn hố/bể, trục đứng.'},
+ {cat:'cen', vn:'Bơm tăng áp', en:'Booster Pump', note:'Tăng áp đường ống, cụm biến tần.'},
+ {cat:'cen', vn:'Bơm ly tâm tự mồi', en:'Self-priming Pump', note:'Tự mồi, hút lại sau khi mất nước; xăng dầu, nước lẫn khí.'},
+ {cat:'cen', vn:'Bơm hướng trục', en:'Axial Flow Pump', note:'Lưu lượng cực lớn, cột áp thấp; thoát nước, tuần hoàn.'},
+ {cat:'cen', vn:'Bơm chìm lồng ống', en:'Submersible Axial Flow', note:'Lưu lượng lớn cột áp thấp, đặt chìm; tiêu úng.'},
+ {cat:'cen', vn:'Bơm dẫn động từ', en:'Magnetic Drive Pump', note:'Không phớt, kín; hóa chất độc/dễ cháy/bay hơi.'},
+ {cat:'cen', vn:'Bơm động cơ đóng hộp', en:'Canned Motor Pump', note:'Kín 2 lớp, an toàn nhất cho chất độc/bay hơi.'},
+ {cat:'cen', vn:'Bơm chân không vòng chất lỏng', en:'Liquid Ring Vacuum', note:'Tạo chân không/hút khí bằng vòng chất lỏng làm kín.'},
+ {cat:'cen', vn:'Bơm vỏ bê tông', en:'Concrete Volute Pump', note:'Lưu lượng siêu lớn; trạm bơm nước thô, làm mát.'},
+ {cat:'cen', vn:'Bơm ly tâm bùn', en:'Slurry Pump', note:'Cánh hở/lót chống mài mòn; bùn, cát, quặng.'},
+ {cat:'cen', vn:'Bơm ly tâm cánh mềm', en:'Soft Impeller Pump', note:'Cánh đàn hồi, êm, tự mồi; thực phẩm, lưu chất nhạy.'},
+
+ {cat:'recip', vn:'Bơm piston / plunger', en:'Piston / Plunger Pump', note:'Áp suất cực cao; rửa cao áp, ép, phun.'},
+ {cat:'recip', vn:'Bơm màng khí nén (AODD)', en:'Air-Operated Double Diaphragm', note:'Tự mồi, chạy khô, xử lý hàm rắn/ăn mòn/nhạy cắt; chống cháy nổ.'},
+ {cat:'recip', vn:'Bơm màng điện (EODD)', en:'Electric Diaphragm Pump', note:'Màng dẫn động điện; chuyển rót/định lượng, không cần khí nén.'},
+
+ {cat:'rotary', vn:'Bơm bánh răng ngoài', en:'External Gear Pump', note:'Dầu nhớt sạch, áp suất cao, lưu lượng đều.'},
+ {cat:'rotary', vn:'Bơm bánh răng trong', en:'Internal Gear Pump', note:'Nhớt cao, êm hơn bánh răng ngoài; nhựa đường, syrup.'},
+ {cat:'rotary', vn:'Bơm cánh khế / thùy', en:'Rotary Lobe Pump', note:'Vệ sinh, êm dịu; thực phẩm, dược, mỹ phẩm.'},
+ {cat:'rotary', vn:'Bơm cánh gạt', en:'Vane Pump', note:'Lưu chất sạch độ nhớt thấp–trung; dung môi, LPG, nhiên liệu.'},
+ {cat:'rotary', vn:'Bơm khoang lũy tiến (trục vít lệch tâm)', en:'Progressive Cavity Pump', note:'Dải nhớt rộng nhất + hàm rắn + nhạy cắt; bùn, paste.'},
+ {cat:'rotary', vn:'Bơm trục vít', en:'Screw Pump', note:'Nhớt cao, dòng êm không xung; dầu nặng, mật rỉ, nhiên liệu.'},
+ {cat:'rotary', vn:'Bơm nhu động', en:'Peristaltic / Hose Pump', note:'Chỉ ống tiếp xúc; mài mòn/nhạy cắt/định lượng, không nhiễm bẩn.'},
+ {cat:'rotary', vn:'Bơm đĩa', en:'Disk Pump', note:'Truyền lực qua ma sát/nhớt giữa các đĩa; lưu chất nhạy cắt, đa pha.'},
+
+ {cat:'dose', vn:'BĐL màng điện tử', en:'Solenoid Diaphragm Metering', note:'Định lượng nhỏ, hóa chất xử lý nước; chi phí thấp.'},
+ {cat:'dose', vn:'BĐL màng cơ khí', en:'Mechanical Diaphragm Metering', note:'Định lượng bền, lưu lượng vừa.'},
+ {cat:'dose', vn:'BĐL màng thủy lực', en:'Hydraulic Diaphragm Metering', note:'Áp suất cao, chính xác; màng được dầu thủy lực bảo vệ.'},
+ {cat:'dose', vn:'BĐL piston', en:'Piston / Plunger Metering', note:'Chính xác nhất (±0,1–0,5%), áp suất cao.'},
+ {cat:'dose', vn:'BĐL nhu động', en:'Peristaltic Metering', note:'~±1%; hóa chất mài mòn, tạo khí, nhạy cắt.'},
+ {cat:'dose', vn:'BĐL bánh răng', en:'Gear Metering Pump', note:'Định lượng lưu chất nhớt sạch liên tục.'},
+ {cat:'dose', vn:'BĐL trục vít lệch tâm', en:'Progressive Cavity Metering', note:'Định lượng lưu chất nhớt / lẫn hạt.'},
+ {cat:'dose', vn:'BĐL không van', en:'Valveless Metering Pump', note:'Piston quay không van; lưu chất tạo cặn/kết tinh.'}
+];
+let catFilter = 'all';
+
+function renderCatalog(){
+  const box = document.getElementById('catalog'); if(!box) return;
+  const q = (document.getElementById('catSearch').value || '').toLowerCase().trim();
+  const items = CATALOG.filter(it=>{
+    if(catFilter !== 'all' && it.cat !== catFilter) return false;
+    if(!q) return true;
+    return (it.vn+' '+it.en+' '+it.note+' '+CATLABEL[it.cat]).toLowerCase().includes(q);
+  });
+  document.getElementById('catCount').textContent = 'Hiển thị '+items.length+'/'+CATALOG.length+' dòng bơm';
+  box.innerHTML = items.map(it=>(
+    '<div class="card '+CATCLS[it.cat]+'" style="padding:16px">'+
+      '<div style="font-weight:700">'+it.vn+'</div>'+
+      '<div class="muted" style="font-size:.82rem;margin-bottom:6px">'+it.en+'</div>'+
+      '<span class="pill '+CATCLS[it.cat]+'">'+CATLABEL[it.cat]+'</span>'+
+      '<p style="font-size:.88rem;margin:.5em 0 0">'+it.note+'</p>'+
+    '</div>'
+  )).join('') || '<p class="empty">Không tìm thấy dòng bơm phù hợp từ khóa.</p>';
+}
+function setCatFilter(f, btn){
+  catFilter = f;
+  document.querySelectorAll('.catf').forEach(b=>{ b.style.borderColor=''; b.style.color=''; });
+  if(btn){ btn.style.borderColor = 'var(--cen2)'; btn.style.color = 'var(--ink)'; }
+  renderCatalog();
+}
+const _cs = document.getElementById('catSearch');
+if(_cs){ _cs.addEventListener('input', renderCatalog); }
+
+window.addEventListener('DOMContentLoaded', ()=>{ runSelect(); mkChart(); renderCatalog(); });
+</script>
+</body>
+</html>
