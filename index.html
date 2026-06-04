@@ -85,6 +85,7 @@ thead th{background:var(--navy);color:#fff;font-family:'Saira',sans-serif;font-w
 tbody td{padding:12px 13px;border-bottom:1px solid var(--line);vertical-align:middle}
 tbody tr:nth-child(even){background:var(--ice2)}
 tbody tr:hover{background:#eef4fb}
+.cell-ts{font-size:11.5px;color:#556;white-space:nowrap;line-height:1.3}
 .cust-nm{font-family:'Saira Condensed',sans-serif;font-weight:700;color:var(--navy);font-size:15px;line-height:1.1}
 .cust-sub{font-size:11.5px;color:var(--grey);margin-top:2px}
 .id-link{font-family:'Saira Condensed',sans-serif;font-weight:800;font-size:13px;background:var(--navy);color:#fff!important;padding:3px 9px;border-radius:7px;text-decoration:none;white-space:nowrap;display:inline-block}
@@ -333,7 +334,7 @@ a.pstat .l{color:var(--steel)}
       <table>
         <thead><tr>
           <th>Đơn hàng / Khách hàng</th><th style="width:96px">Task tổng</th><th style="width:150px">Giai đoạn</th>
-          <th style="width:140px">Tiến độ</th><th style="width:170px">Hạn / Công nợ</th><th style="width:210px"></th>
+          <th style="width:140px">Tiến độ</th><th style="width:170px">Hạn / Công nợ</th><th style="width:130px">Cập nhật</th><th style="width:210px"></th>
         </tr></thead>
         <tbody id="ordersBody"></tbody>
       </table>
@@ -402,8 +403,8 @@ var SAMPLE = {
     { label: "Đạt mục tiêu tháng", value: "58%", sub: "MT 2.165 tỷ/tháng", color: "amber" }
   ],
   DonHang: [
-    { kh: "Ajinomoto Việt Nam", kh_sub: "OMAC · 3 bơm cánh khế", task_id: "27821", giai_doan: "PO / Hợp đồng", tien_do: "0", han_congno: "31/08/2026 · 790.776.000₫", order_id: "5143" },
-    { kh: "Vietsovpetro", kh_sub: "Bảo trì / phụ tùng", task_id: "23714", giai_doan: "(đang cập nhật)", tien_do: "", han_congno: "", order_id: "4811" }
+    { kh: "Ajinomoto Việt Nam", kh_sub: "OMAC · 3 bơm cánh khế", task_id: "27821", giai_doan: "PO / Hợp đồng", tien_do: "0", han_congno: "31/08/2026 · 790.776.000₫", order_id: "5143", cap_nhat: "03/06/2026 10:00" },
+    { kh: "Vietsovpetro", kh_sub: "Bảo trì / phụ tùng", task_id: "23714", giai_doan: "(đang cập nhật)", tien_do: "", han_congno: "", order_id: "4811", cap_nhat: "" }
   ],
   NhanSu: [
     { nhom:"dv", ten:"Nguyễn Mạnh Vinh Cường", vai_tro:"KS Dịch vụ · báo giá", dang_lam:62, hom_nay:4, qua_han:58, ke_hoach:0 },
@@ -483,6 +484,7 @@ function renderOrders(rows) {
       "<td>" + esc(r.giai_doan) + "</td>" +
       '<td><div class="pb"><div class="lab">' + pct + '%</div><div class="bar"><i style="width:' + pct + "%;background:var(--" + bar + ')"></i></div></div></td>' +
       "<td>" + esc(r.han_congno) + "</td>" +
+      '<td class="cell-ts">' + (r.cap_nhat ? esc(r.cap_nhat) : '—') + "</td>" +
       '<td><div class="btns">' + crm + detail + "</div></td>" +
       "</tr>";
   }).join("");
