@@ -298,9 +298,19 @@ function rTimeline(rows){
 }
 function rKey(info){
   const kv=(k,v,s,flag)=> v?`<div class="kv${flag?' flag':''}"><div class="k">${esc(k)}</div><div class="v">${esc(v)}${s?`<small>${esc(s)}</small>`:''}</div></div>`:'';
+  function maskContact(v){if(!v)return '';var s=String(v);return s.length<=6?'••••••':'••••••'+s.substring(6);}
+  var khCard='';
+  if(info.kh||info.lien_he){
+    var lines='';
+    if(info.dia_chi) lines+='<small>'+esc(info.dia_chi)+'</small>';
+    if(info.lien_he){
+      var maskedMeta=info.lien_he_meta?maskContact(info.lien_he_meta):'';
+      lines+='<small>👤 '+esc(info.lien_he)+(maskedMeta?' · '+esc(maskedMeta):'')+'</small>';
+    }
+    khCard='<div class="kv"><div class="k">Khách hàng</div><div class="v">'+esc(info.kh||'')+lines+'</div></div>';
+  }
   const cards=[
-    kv('Khách hàng', info.kh, info.dia_chi),
-    kv('Liên hệ nhận hàng', info.lien_he, info.lien_he_meta),
+    khCard,
     kv('Sales / Mua hàng', info.sales, info.mua_hang?('Mua hàng: '+info.mua_hang):''),
     kv('Nhà cung cấp', info.ncc, info.ncc_meta),
     kv('Trạng thái đơn', info.trang_thai, info.trang_thai_meta),
