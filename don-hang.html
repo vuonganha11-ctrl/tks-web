@@ -298,14 +298,14 @@ function rTimeline(rows){
 }
 function rKey(info){
   const kv=(k,v,s,flag)=> v?`<div class="kv${flag?' flag':''}"><div class="k">${esc(k)}</div><div class="v">${esc(v)}${s?`<small>${esc(s)}</small>`:''}</div></div>`:'';
-  function maskContact(v){if(!v)return '';return String(v).replace(/[^\s·|,;]+/g,function(m){return m.length<=6?'••••••':'••••••'+m.substring(6);});}
+  function maskContact(v){if(!v)return '';return String(v).replace(/\S+/g,function(m){return (/^\d{7,}$/.test(m)||/@/.test(m))?'••••••'+m.substring(6):m;});}
   var khCard='';
   if(info.kh||info.lien_he){
     var lines='';
     if(info.dia_chi) lines+='<small>'+esc(info.dia_chi)+'</small>';
     if(info.lien_he){
       var maskedMeta=info.lien_he_meta?maskContact(info.lien_he_meta):'';
-      lines+='<small>👤 '+esc(info.lien_he)+(maskedMeta?' · '+esc(maskedMeta):'')+'</small>';
+      lines+='<small>👤 '+esc(maskContact(info.lien_he))+(maskedMeta?' · '+esc(maskedMeta):'')+'</small>';
     }
     khCard='<div class="kv"><div class="k">Khách hàng</div><div class="v">'+esc(info.kh||'')+lines+'</div></div>';
   }
