@@ -404,21 +404,6 @@ function rGantt(info, rows){
     }
     // Từ đây gviz() dùng SHEET_ID đúng (riêng hoặc master làm fallback)
 
-    // B0 — Lookup sheet_id riêng của đơn từ tab DonHang (Sheet master)
-    const masterGviz = async (tab) => {
-      const u=`https://docs.google.com/spreadsheets/d/${MASTER_SHEET_ID}/gviz/tq?tqx=out:json&headers=1&sheet=${encodeURIComponent(tab)}`;
-      const t=await (await fetch(u)).text();
-      const j=JSON.parse(t.substring(t.indexOf('{'), t.lastIndexOf('}')+1));
-      const cols=(j.table.cols||[]).map(c=>(c.label||c.id||'').trim());
-      return (j.table.rows||[]).map(r=>{const o={}; (r.c||[]).forEach((cell,i)=>{ o[cols[i]] = cell ? cleanVal(cell.v) : ''; }); return o;});
-    };
-    const _masterDH = await masterGviz('DonHang').catch(()=>[]);
-    const _dhRow = _masterDH.find(r => String(r.order_id).trim() === ORDER);
-    if(_dhRow && _dhRow.sheet_id && String(_dhRow.sheet_id).trim()) {
-      SHEET_ID = String(_dhRow.sheet_id).trim();
-    }
-    // Từ đây gviz() dùng SHEET_ID đúng (riêng hoặc master làm fallback)
-
     const [donhang, info, congviec, todo, timeline, hangmuc, hoso, gantt] = await Promise.all([
       gviz('DonHang'), gviz('DH_Info'), gviz('DH_CongViec'), gviz('DH_ToDo'),
       gviz('DH_Timeline'), gviz('DH_HangMuc'), gviz('DH_HoSo'), gviz('DH_Gantt')
