@@ -227,7 +227,7 @@ async function gviz(tab){
   const json=JSON.parse(txt.substring(txt.indexOf('{'), txt.lastIndexOf('}')+1));
   const cols=(json.table.cols||[]).map(c=>(c.label||c.id||'').trim());
   return (json.table.rows||[]).map(r=>{
-    const o={}; (r.c||[]).forEach((cell,i)=>{ o[cols[i]] = cell ? cleanVal(cell.v) : ''; }); return o;
+    const o={}; (r.c||[]).forEach((cell,i)=>{ o[cols[i]] = cell ? (cell.f != null ? cell.f : cleanVal(cell.v)) : ''; }); return o;
   });
 }
 const byOrder = rows => rows.filter(r => String(r.order_id).trim() === ORDER);
@@ -395,7 +395,7 @@ function rGantt(info, rows){
       const t=await (await fetch(u)).text();
       const j=JSON.parse(t.substring(t.indexOf('{'), t.lastIndexOf('}')+1));
       const cols=(j.table.cols||[]).map(c=>(c.label||c.id||'').trim());
-      return (j.table.rows||[]).map(r=>{const o={}; (r.c||[]).forEach((cell,i)=>{ o[cols[i]] = cell ? cleanVal(cell.v) : ''; }); return o;});
+      return (j.table.rows||[]).map(r=>{const o={}; (r.c||[]).forEach((cell,i)=>{ o[cols[i]] = cell ? (cell.f != null ? cell.f : cleanVal(cell.v)) : ''; }); return o;});
     };
     const _masterDH = await masterGviz('DonHang').catch(()=>[]);
     const _dhRow = _masterDH.find(r => String(r.order_id).trim() === ORDER);
