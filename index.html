@@ -357,7 +357,7 @@ a.pstat .l{color:var(--steel)}
     <div class="sec-h"><span class="no" style="background:var(--red)">&#9888;</span><h2>Sự cố</h2><span class="cnt" id="incCnt"></span><span class="line"></span></div>
     <div class="card scrollx">
       <table>
-        <thead><tr><th style="width:120px">Mức độ</th><th style="width:84px">Task</th><th>Sự cố / Nội dung</th><th style="width:96px">Trễ</th><th style="width:90px">Đơn</th><th style="width:160px">Người thực hiện</th><th style="width:110px"></th></tr></thead>
+        <thead><tr><th style="width:120px">Mức độ</th><th style="width:84px">Task</th><th>Sự cố / Nội dung</th><th style="width:96px">Trễ</th><th style="width:160px">Người thực hiện</th><th style="width:110px"></th></tr></thead>
         <tbody id="incidentsBody"></tbody>
       </table>
     </div>
@@ -610,18 +610,28 @@ function renderIncidents(rows) {
       "<td>" + idCell + "</td>" +
       "<td>" + esc(r.noi_dung) + "</td>" +
       '<td><span class="late' + (s.c === "sev-md" ? " soft" : "") + '">' + esc(r.tre) + "</span></td>" +
-      "<td>" + esc(r.don) + "</td>" +
       "<td>" + esc(r.nguoi_th || "") + "</td>" +
       "<td>" + act + "</td>" +
       "</tr>";
   }).join("");
 }
-function renderRisks(rows){
-  rows=rows||[];
-  $("riskCnt").textContent=rows.length+" mục";
+function renderRisks(rows,orders){
+  rows=rows||[]; orders=orders||[];
+  var _today=new Date(); _today.setHours(0,0,0,0);
+  var autoRisks=[];
+  orders.forEach(function(r){
+    var hc=String(r.han_congno||"");
+    var dtM=hc.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+    if(dtM){var dl=new Date(+dtM[3],+dtM[2]-1,+dtM[1]);var dLeft=Math.round((dl-_today)/86400000);
+      if(dLeft<0){autoRisks.push({muc_do:"hi",noi_dung:"⚠ Công nợ quá hạn "+Math.abs(dLeft)+" ngày: "+r.kh+(r.kh_sub?" — "+r.kh_sub:""),kha_nang:"hi",giai_phap:"Liên hệ khách hàng đôn đốc thanh toán, xem xét pháp lý",trang_thai:"Đang xảy ra"});}
+      else if(dLeft<=30){autoRisks.push({muc_do:"md",noi_dung:"⏳ Công nợ đến hạn "+dLeft+" ngày: "+r.kh,kha_nang:"md",giai_phap:"Chuẩn bị hồ sơ, nhắc nhở khách hàng thanh toán",trang_thai:"Đang theo dõi"});}}
+    if((r.giai_doan||"").indexOf("đang cập nhật")>=0){autoRisks.push({muc_do:"lo",noi_dung:"ℹ Thiếu thông tin tiến độ: "+r.kh+(r.kh_sub?" — "+r.kh_sub:""),kha_nang:"md",giai_phap:"Cập nhật giai đoạn, tiến độ đơn hàng vào CRM",trang_thai:"Cần cập nhật"});}
+  });
+  var allRows=autoRisks.concat(rows);
+  $("riskCnt").textContent=allRows.length+" mục"+(autoRisks.length?" ("+autoRisks.length+" tự động)":"");
   var sev={hi:{c:"sev-hi",t:"Cao"},md:{c:"sev-md",t:"Trung bình"},lo:{c:"sev-lo",t:"Thấp"}};
   var khMap={hi:"Cao",md:"Trung bình",lo:"Thấp"};
-  $("risksBody").innerHTML=rows.map(function(r){
+  $("risksBody").innerHTML=allRows.map(function(r){
     var s=sev[(r.muc_do||"lo").toLowerCase()]||sev.lo;
     var kh=khMap[(r.kha_nang||"lo").toLowerCase()]||esc(r.kha_nang)||"—";
     var tt=r.trang_thai||"—";
@@ -648,7 +658,7 @@ function renderAll(d) {
   renderTravel(d.LichCongTac);
   renderGantt(d.LichCongTac, d.NhanSu);
   renderIncidents(d.SuCo);
-  renderRisks(d.RuiRo);
+  renderRisks(d.RuiRo, d.DonHang);
   renderFooter(d.Meta);
 }
 
