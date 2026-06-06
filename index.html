@@ -369,7 +369,7 @@ a.pstat .l{color:var(--steel)}
     <div class="sec-h"><span class="no" style="background:var(--amber)">&#9889;</span><h2>Rủi ro — Theo dõi &amp; Phòng ngừa</h2><span class="cnt" id="riskCnt"></span><span class="line"></span></div>
     <div class="card scrollx">
       <table>
-        <thead><tr><th style="width:120px">Mức độ</th><th style="width:110px">Khả năng</th><th>Nội dung rủi ro</th><th>Giải pháp</th><th style="width:130px">Trạng thái</th></tr></thead>
+        <thead><tr><th style="width:120px">Mức độ</th><th style="width:110px">Chi tiết</th><th>Nội dung rủi ro</th><th>Giải pháp</th><th style="width:130px">Trạng thái</th></tr></thead>
         <tbody id="risksBody"></tbody>
       </table>
     </div>
@@ -626,7 +626,7 @@ function renderRisks(rows,orders){
     var gd=String(r.giai_doan||"").toLowerCase();
     // 1. Thiếu thông tin tiến độ
     if(gd.indexOf("đang cập nhật")>=0||gd.indexOf("(đang")>=0){
-      autoRisks.push({muc_do:"md",noi_dung:"⚠ Thiếu thông tin tiến độ: "+r.kh+(r.kh_sub?" — "+r.kh_sub:""),kha_nang:"md",giai_phap:"Cập nhật giai đoạn, tiến độ và mốc cäng thành trong CRM",trang_thai:"Cần cập nhật"});
+      autoRisks.push({muc_do:"md",noi_dung:"⚠ Thiếu thông tin tiến độ: "+r.kh+(r.kh_sub?" — "+r.kh_sub:""),kha_nang:"md",giai_phap:"Cập nhật giai đoạn, tiến độ và mốc cäng thành trong CRM",trang_thai:"Cần cập nhật",order_id:r.order_id});
     }
     // 2. Khả năng trễ hạn giao hàng
     var hc=String(r.han_congno||"");
@@ -635,9 +635,9 @@ function renderRisks(rows,orders){
       var dl=new Date(+dtM[3],+dtM[2]-1,+dtM[1]);
       var dLeft=Math.round((dl-_today)/86400000);
       if(dLeft<0&&pct<100){
-        autoRisks.push({muc_do:"hi",noi_dung:"🚨 Trễ hạn giao hàng "+Math.abs(dLeft)+" ngày (tiến độ "+pct+"%): "+r.kh+(r.kh_sub?" — "+r.kh_sub:""),kha_nang:"hi",giai_phap:"Đàm phán gia hạn hoặc tăng nguồn lực, báo cáo câp trên ngay",trang_thai:"Đang xảy ra"});
+        autoRisks.push({muc_do:"hi",noi_dung:"🚨 Trễ hạn giao hàng "+Math.abs(dLeft)+" ngày (tiến độ "+pct+"%): "+r.kh+(r.kh_sub?" — "+r.kh_sub:""),kha_nang:"hi",giai_phap:"Đàm phán gia hạn hoặc tăng nguồn lực, báo cáo câp trên ngay",trang_thai:"Đang xảy ra",order_id:r.order_id});
       } else if(dLeft>=0&&dLeft<=45&&pct<60){
-        autoRisks.push({muc_do:"md",noi_dung:"⏳ Nguy cơ trễ hạn giao hàng (còn "+dLeft+" ngày, tiến độ "+pct+"%): "+r.kh,kha_nang:"md",giai_phap:"Rà soát tiến độ thực tế, trao đổi với KH nếu cần điều chỉnh",trang_thai:"Cần theo dõi"});
+        autoRisks.push({muc_do:"md",noi_dung:"⏳ Nguy cơ trễ hạn giao hàng (còn "+dLeft+" ngày, tiến độ "+pct+"%): "+r.kh,kha_nang:"md",giai_phap:"Rà soát tiến độ thực tế, trao đổi với KH nếu cần điều chỉnh",trang_thai:"Cần theo dõi",order_id:r.order_id});
       }
     }
   });
@@ -647,12 +647,12 @@ function renderRisks(rows,orders){
   var khMap={hi:"Cao",md:"Trung bình",lo:"Thấp"};
   $("risksBody").innerHTML=allRows.map(function(r){
     var s=sev[(r.muc_do||"lo").toLowerCase()]||sev.lo;
-    var kh=khMap[(r.kha_nang||"lo").toLowerCase()]||esc(r.kha_nang)||"—";
+    var kh=r.order_id?'<a href="don-hang.html?order='+encodeURIComponent(r.order_id)+'" target="_blank" style="color:var(--steel);text-decoration:none;font-size:12px;white-space:nowrap">Xem đơn →</a>':"—";
     var tt=r.trang_thai||"—";
     var ttc=tt.indexOf("xảy")>=0?"sev-hi":tt.indexOf("phòng")>=0?"sev-lo":"sev-md";
     return "<tr>"+
       '<td><span class="sev '+s.c+'"><i></i>'+s.t+"</span></td>"+
-      "<td>"+esc(kh)+"</td>"+
+      "<td>"+kh+"</td>"+
       "<td>"+esc(r.noi_dung)+"</td>"+
       "<td>"+esc(r.giai_phap)+"</td>"+
       '<td><span class="sev '+ttc+'" style="font-size:11px">'+esc(tt)+"</span></td>"+
