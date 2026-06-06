@@ -237,6 +237,8 @@ const byOrder = rows => rows.filter(r => String(r.order_id).trim() === ORDER);
 /* ---------- renderers ---------- */
 function rHero(info){
   var chips=[];
+    chips.push('<a class="chip" href="index.html" style="text-decoration:none">&#8592; Về Dashboard</a>');
+    chips.push('<a class="chip" href="danh-sach-don.html" style="text-decoration:none">&#9776; Danh s&#225;ch &#273;&#417;n</a>');
   if(info.bao_gia)  chips.push('<span class="chip">📄 '+esc(info.bao_gia)+'</span>');
   if(info.ma_crm)   chips.push('<span class="chip">🧾 CRM #'+esc(info.ma_crm)+' · <a href="https://thaikhuong.getflycrm.com/#/crm/order/detail/'+esc(info.ma_crm)+'" target="_blank">mở đơn</a></span>');
   if(info.task_tong)chips.push('<span class="chip">✅ Task '+esc(info.task_tong)+' · <a href="https://thaikhuong.getflycrm.com/#tasks/?task_id='+esc(info.task_tong)+'" target="_blank">mở task</a></span>');
