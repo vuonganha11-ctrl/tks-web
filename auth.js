@@ -15,12 +15,12 @@
   }
 
   function getUser() {
-    try { return JSON.parse(sessionStorage.getItem(SESSION_KEY) || 'null'); }
+    try { return JSON.parse(localStorage.getItem(SESSION_KEY) || 'null'); }
     catch (e) { return null; }
   }
 
   function logout() {
-    sessionStorage.removeItem(SESSION_KEY);
+    localStorage.removeItem(SESSION_KEY);
     window.location.href = LOGIN_PAGE;
   }
 
