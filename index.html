@@ -330,16 +330,30 @@ a.pstat .l{color:var(--steel)}
     <div id="revenue"></div>
   </section>
 
-  <!-- ĐƠN HÀNG -->
+  <!-- ĐƠN HÀNG: ƯU TIÊN -->
   <section>
-    <div class="sec-h"><span class="no">&#9745;</span><h2>Công việc — Đơn hàng</h2><span class="cnt" id="ordersCnt"></span><span class="line"></span></div>
+    <div class="sec-h"><span class="no" style="background:var(--amber)">&#9733;</span><h2>Công việc — Ưu tiên</h2><span class="cnt" id="ordersCntPriority"></span><span class="line"></span></div>
     <div class="card scrollx">
       <table>
         <thead><tr>
           <th>Đơn hàng / Khách hàng</th><th style="width:96px">Task tổng</th><th style="width:150px">Giai đoạn</th>
           <th style="width:140px">Tiến độ</th><th style="width:170px">Hạn / Công nợ</th><th style="width:130px">Cập nhật</th><th style="width:210px"></th>
         </tr></thead>
-        <tbody id="ordersBody"></tbody>
+        <tbody id="ordersBodyPriority"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ĐƠN HÀNG: ĐANG XỬ LÝ -->
+  <section>
+    <div class="sec-h"><span class="no">&#9745;</span><h2>Công việc — Đang xử lý</h2><span class="cnt" id="ordersCntProcessing"></span><span class="line"></span></div>
+    <div class="card scrollx">
+      <table>
+        <thead><tr>
+          <th>Đơn hàng / Khách hàng</th><th style="width:96px">Task tổng</th><th style="width:150px">Giai đoạn</th>
+          <th style="width:140px">Tiến độ</th><th style="width:170px">Hạn / Công nợ</th><th style="width:130px">Cập nhật</th><th style="width:210px"></th>
+        </tr></thead>
+        <tbody id="ordersBodyProcessing"></tbody>
       </table>
     </div>
   </section>
@@ -489,8 +503,8 @@ function renderKPI(rows) {
 }
 function renderOrders(rows) {
   rows = rows || [];
-  $("ordersCnt").textContent = rows.length + " đơn";
-  $("ordersBody").innerHTML = rows.map(function (r) {
+  function isPri(r){ var v = String(r && r.uu_tien != null ? r.uu_tien : "").trim().toLowerCase(); return v !== "" && v !== "0" && v !== "false" && v !== "no" && v !== "không" && v !== "khong"; }
+  function rowHtml(r) {
     var pct = Math.max(0, Math.min(100, num(r.tien_do)));
     var bar = pct >= 100 ? "green" : "steel";
     var idCell = r.task_id ? '<a class="id-link" target="_blank" href="' + task(r.task_id) + '">#' + esc(r.task_id) + "</a>" : "—";
@@ -505,7 +519,13 @@ function renderOrders(rows) {
       '<td class="cell-ts">' + (r.cap_nhat ? esc(r.cap_nhat) : '—') + "</td>" +
       '<td><div class="btns">' + crm + detail + "</div></td>" +
       "</tr>";
-  }).join("");
+  }
+  var pri = rows.filter(isPri);
+  var proc = rows.filter(function(r){ return !isPri(r); });
+  $("ordersCntPriority").textContent = pri.length + " đơn";
+  $("ordersCntProcessing").textContent = proc.length + " đơn";
+  $("ordersBodyPriority").innerHTML = pri.length ? pri.map(rowHtml).join("") : '<tr><td colspan="7" style="color:var(--grey);text-align:center;padding:16px">Chưa có đơn ưu tiên — đánh dấu cột uu_tien trong tab DonHang.</td></tr>';
+  $("ordersBodyProcessing").innerHTML = proc.map(rowHtml).join("");
 }
 function renderRevenue(rows) {
   rows = rows || [];
