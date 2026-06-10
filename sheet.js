@@ -86,7 +86,7 @@
   async function fetchTabs(sheetId, tabs) {
     var out = {};
     await Promise.all(tabs.map(async function (t) {
-      out[t] = await fetchTab(sheetId, t);
+      try { out[t] = await fetchTab(sheetId, t); } catch (e) { console.warn("Bo qua tab loi:", t, e && e.message); out[t] = []; }
     }));
     return out;
   }
