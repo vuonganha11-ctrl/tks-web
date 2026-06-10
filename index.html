@@ -344,6 +344,20 @@ a.pstat .l{color:var(--steel)}
     </div>
   </section>
 
+  <!-- ĐƠN HÀNG: DỊCH VỤ TKS -->
+  <section>
+    <div class="sec-h"><span class="no" style="background:var(--green)">&#128736;</span><h2>Công việc — Dịch vụ TKS</h2><span class="cnt" id="ordersCntService"></span><span class="line"></span></div>
+    <div class="card scrollx">
+      <table>
+        <thead><tr>
+          <th>Đơn hàng / Khách hàng</th><th style="width:96px">Task tổng</th><th style="width:150px">Giai đoạn</th>
+          <th style="width:140px">Tiến độ</th><th style="width:170px">Hạn / Công nợ</th><th style="width:130px">Cập nhật</th><th style="width:210px"></th>
+        </tr></thead>
+        <tbody id="ordersBodyService"></tbody>
+      </table>
+    </div>
+  </section>
+
   <!-- ĐƠN HÀNG: ĐANG XỬ LÝ -->
   <section>
     <div class="sec-h"><span class="no">&#9745;</span><h2>Công việc — Đang xử lý</h2><span class="cnt" id="ordersCntProcessing"></span><span class="line"></span></div>
@@ -503,7 +517,9 @@ function renderKPI(rows) {
 }
 function renderOrders(rows) {
   rows = rows || [];
-  function isPri(r){ var v = String(r && r.uu_tien != null ? r.uu_tien : "").trim().toLowerCase(); return v !== "" && v !== "0" && v !== "false" && v !== "no" && v !== "không" && v !== "khong"; }
+  function flag(v){ v = String(v == null ? "" : v).trim().toLowerCase(); return v !== "" && v !== "0" && v !== "false" && v !== "no" && v !== "không" && v !== "khong"; }
+  function isPri(r){ return flag(r && r.uu_tien); }
+  function isSvc(r){ return flag(r && r.dich_vu); }
   function rowHtml(r) {
     var pct = Math.max(0, Math.min(100, num(r.tien_do)));
     var bar = pct >= 100 ? "green" : "steel";
@@ -521,10 +537,13 @@ function renderOrders(rows) {
       "</tr>";
   }
   var pri = rows.filter(isPri);
-  var proc = rows.filter(function(r){ return !isPri(r); });
+  var svc = rows.filter(function(r){ return !isPri(r) && isSvc(r); });
+  var proc = rows.filter(function(r){ return !isPri(r) && !isSvc(r); });
   $("ordersCntPriority").textContent = pri.length + " đơn";
+  $("ordersCntService").textContent = svc.length + " đơn";
   $("ordersCntProcessing").textContent = proc.length + " đơn";
   $("ordersBodyPriority").innerHTML = pri.length ? pri.map(rowHtml).join("") : '<tr><td colspan="7" style="color:var(--grey);text-align:center;padding:16px">Chưa có đơn ưu tiên — đánh dấu cột uu_tien trong tab DonHang.</td></tr>';
+  $("ordersBodyService").innerHTML = svc.length ? svc.map(rowHtml).join("") : '<tr><td colspan="7" style="color:var(--grey);text-align:center;padding:16px">Chưa có đơn dịch vụ — đánh dấu cột dich_vu trong tab DonHang.</td></tr>';
   $("ordersBodyProcessing").innerHTML = proc.map(rowHtml).join("");
 }
 function renderRevenue(rows) {
