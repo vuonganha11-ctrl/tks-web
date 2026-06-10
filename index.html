@@ -158,6 +158,8 @@ footer{margin-top:34px;text-align:center;font-size:12px;color:var(--grey);line-h
 .tcol .th{display:flex;align-items:center;gap:9px;padding:13px 15px;color:#fff;font-family:'Saira Condensed',sans-serif;font-weight:800;text-transform:uppercase;font-size:14px;letter-spacing:.02em}
 .tcol .th .ic{font-size:16px}.tcol .th .th-chat{margin-left:auto;font-size:11px;font-weight:700;color:#fff;text-decoration:none;background:rgba(255,255,255,.22);padding:3px 9px;border-radius:999px;text-transform:none;letter-spacing:.01em;white-space:nowrap}.tcol .th .th-chat:hover{background:rgba(255,255,255,.4)}
 .th-field{background:linear-gradient(135deg,#173a5e,#2c5a8a)} .th-car{background:linear-gradient(135deg,#2f7d4f,#3a9b62)} .th-fly{background:linear-gradient(135deg,#e08a00,#f0a429)}
+.imports{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+.th-hq{background:linear-gradient(135deg,#4b2e83,#6d44c0)} .th-kho{background:linear-gradient(135deg,#0e6b6b,#149b9b)}
 .titems{padding:6px 14px 12px}
 .titem{padding:10px 0;border-bottom:1px solid var(--line)}
 .titem:last-child{border-bottom:none}
@@ -353,6 +355,12 @@ a.pstat .l{color:var(--steel)}
     
   </section>
 
+  <!-- HÀNG NHẬP KHẨU -->
+  <section>
+    <div class="sec-h"><span class="no" style="background:var(--steel)">&#128230;</span><h2>Hàng nhập khẩu</h2><span class="cnt" id="importsCnt"></span><span class="line"></span></div>
+    <div class="imports" id="imports"></div>
+  </section>
+
   <!-- SỰ CỐ -->
   <section>
     <div class="sec-h"><span class="no" style="background:var(--red)">&#9888;</span><h2>Sự cố</h2><span class="cnt" id="incCnt"></span><span class="line"></span></div>
@@ -388,7 +396,7 @@ a.pstat .l{color:var(--steel)}
    Để trống = trang hiển thị DỮ LIỆU MẪU (xem trước thiết kế).
    ==================================================================== */
 var SHEET_ID = (window.TKS_SHEET_ID || "");
-var TABS = ["Meta", "KPI", "DonHang", "NhanSu", "DoanhSo", "LichCongTac", "SuCo","RuiRo"];
+var TABS = ["Meta", "KPI", "DonHang", "NhanSu", "DoanhSo", "LichCongTac", "SuCo","RuiRo","NhapKhau"];
 
 /* ====================== DỮ LIỆU MẪU ====================== */
 var SAMPLE = {
@@ -446,6 +454,14 @@ var SAMPLE = {
   RuiRo:[
     {muc_do:"hi",noi_dung:"Nhà cung cấp trọng yếu có nguy cơ thiếu hàng",kha_nang:"md",giai_phap:"Dự trữ tồn kho đệm 2 tuần, tìm nhà cung cấp thay thế",trang_thai:"Đang theo dõi"},
     {muc_do:"md",noi_dung:"Kỹ thuật viên nghỉ dài ngày trong mùa cao điểm",kha_nang:"lo",giai_phap:"Lập kế hoạch điều phối nhân sự, đào tạo chéo",trang_thai:"Đang theo dõi"}
+  ],
+  NhapKhau: [
+    { cot:"hq", dt:"09/06", hang:"S.Robuschi", kien:"3", kg:"429", du_an:"Minh Hưng · Kho xăng PETEC", models:"RDB 125-25C ×1 · RDB 65-20A ×3", noi_giao:"Minh Hưng", kh:"Xuân Vũ", tt:"", today:"", chat_url:"https://chat.google.com/room/AAQAeaPyiaw" },
+    { cot:"hq", dt:"09/06", hang:"Nova Rotors", kien:"8", kg:"2928", du_an:"AKS · Gói đường RS 25K", models:"DN8OL1 ×4 · DN4OL1 (…)", noi_giao:"An Khê", kh:"a.Sang", tt:"", today:"", chat_url:"https://chat.google.com/room/AAQA2Mepalk" },
+    { cot:"hq", dt:"09/06", hang:"Phụ tùng (Robuschi + Seal)", kien:"", kg:"", du_an:"Đa điểm: An Khê · Masan · Iguacu", models:"RGB 100-40I ×2 · RDB 65-25E ×2 · RDB 40-20A ×1 · Seal URATM1072700 ×1 · URATM1068200 ×2", noi_giao:"An Khê · Masan · Iguacu", kh:"a.Sang · Ngọc", tt:"", today:"", chat_url:"" },
+    { cot:"hq", dt:"08/06", hang:"Caprari", kien:"5", kg:"619.8", du_an:"Minh Hưng · Kho xăng PETEC", models:"NCH125-250/250 ×2 · MEC-ATZ3/100Y ×2 · CVD151/8+C30550T221-V ×1", noi_giao:"Minh Hưng", kh:"Thuyền", tt:"", today:"", chat_url:"https://chat.google.com/room/AAQAeaPyiaw" },
+    { cot:"kho", dt:"10/06", hang:"Caprari", kien:"5", kg:"619.8", du_an:"Minh Hưng · Kho xăng PETEC", models:"NCH125-250/250 ×2 · MEC-ATZ3/100Y ×2 · CVD151/8+C30550T221-V ×1", noi_giao:"Minh Hưng", kh:"Thuyền", tt:"Đang về xưởng trưa nay", today:"1", chat_url:"https://chat.google.com/room/AAQAeaPyiaw" },
+    { cot:"kho", dt:"05/06", hang:"Motive", kien:"5", kg:"1494", du_an:"", models:"", noi_giao:"Xưởng TKT", kh:"", tt:"Đã nhận đủ tại xưởng", today:"", chat_url:"" }
   ]
 };
 
@@ -599,6 +615,51 @@ function renderTravel(rows) {
     return '<div class="tcol"><div class="th ' + d.cls + '"><span class="ic">' + d.ic + "</span>" + d.name + chat + '</div><div class="titems">' + items + "</div></div>";
   }).join("");
 }
+function renderImports(rows) {
+  rows = (Array.isArray(rows) && rows.length && rows.some(function(r){return r && r.cot;})) ? rows : SAMPLE.NhapKhau;
+  var CHAT = { hq: "https://chat.google.com/room/AAAA0_I1wlg", kho: "https://chat.google.com/room/AAAANH26XAY" };
+  var defs = [
+    { key: "hq", cls: "th-hq", ic: "&#128674;", name: "Đang khai hải quan" },
+    { key: "kho", cls: "th-kho", ic: "&#127981;", name: "Hàng về kho TKT" }
+  ];
+  var _t = new Date(); _t.setHours(0,0,0,0);
+  var _cut = _t.getTime() - 7*86400000;
+  function _end(dt){
+    var s = String(dt||"").trim(); var p = s.split("/");
+    if(p.length !== 2) return null;
+    var d = parseInt(p[0].split("-").pop(),10), mo = parseInt(p[1],10);
+    if(!d || !mo) return null;
+    var y = _t.getFullYear(); var dd = new Date(y, mo-1, d);
+    if(dd.getTime()-_t.getTime() > 200*86400000) dd = new Date(y-1, mo-1, d);
+    return dd.getTime();
+  }
+  var total = 0;
+  $("imports").innerHTML = defs.map(function (d) {
+    var list = rows.filter(function (r) { return (r.cot || "").toLowerCase() === d.key; });
+    list = list.filter(function (r) { var en = _end(r.dt); return en === null || en >= _cut; });
+    total += list.length;
+    var items = list.map(function (r) {
+      var isToday = String(r.today) === "1" || String(r.today).toLowerCase() === "true";
+      var meta = [];
+      if (r.kien) meta.push(esc(r.kien) + " kiện");
+      if (r.kg) meta.push(esc(r.kg) + " kg");
+      var headLine = "<b>" + esc(r.hang || "Lô hàng") + "</b>" + (meta.length ? " <span style=\"color:var(--grey)\">· " + meta.join(" · ") + "</span>" : "");
+      var link = r.chat_url ? " <a class=\"tid\" target=\"_blank\" rel=\"noopener\" href=\"" + esc(r.chat_url) + "\">đơn ↗</a>" : "";
+      var st = r.tt ? " · <span style=\"color:var(--amber);font-weight:700\">" + esc(r.tt) + "</span>" : "";
+      var mdl = r.models ? "<div class=\"ppl\">" + esc(r.models) + "</div>" : "";
+      var dest = [];
+      if (r.noi_giao) dest.push("→ " + esc(r.noi_giao));
+      if (r.kh) dest.push(esc(r.kh));
+      if (r.du_an) dest.push(esc(r.du_an));
+      var destLine = dest.length ? "<div class=\"ppl\">" + dest.join(" · ") + "</div>" : "";
+      return "<div class=\"titem" + (isToday ? " today" : "") + "\"><div class=\"dt\">" + esc(r.dt) + (isToday ? " · Hôm nay" : "") + st + "</div><div class=\"desc\">" + headLine + link + "</div>" + mdl + destLine + "</div>";
+    }).join("") || "<div class=\"titem\"><div class=\"desc\" style=\"color:var(--grey)\">Chưa có lô hàng trong 7 ngày.</div></div>";
+    var chat = CHAT[d.key] ? "<a class=\"th-chat\" target=\"_blank\" rel=\"noopener\" href=\"" + CHAT[d.key] + "\">Chat ↗</a>" : "";
+    return "<div class=\"tcol\"><div class=\"th " + d.cls + "\"><span class=\"ic\">" + d.ic + "</span>" + d.name + chat + "</div><div class=\"titems\">" + items + "</div></div>";
+  }).join("");
+  var ic = $("importsCnt"); if (ic) ic.textContent = total + " lô";
+}
+
 function renderIncidents(rows) {
   rows = rows || [];
   $("incCnt").textContent = rows.length + " việc";
@@ -670,6 +731,7 @@ function renderAll(d) {
   renderRevenue(d.DoanhSo);
   renderPeople(d.NhanSu);
   renderTravel(d.LichCongTac);
+  renderImports(d.NhapKhau);
   renderGantt(d.LichCongTac, d.NhanSu);
   renderIncidents(d.SuCo);
   renderRisks(d.RuiRo, d.DonHang);
