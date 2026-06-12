@@ -76,6 +76,18 @@ const TABLES = {
 };
 const ROLES = ['admin','truong_phong','dieu_phoi','ky_thuat'];
 
+// ====================== CẤU HÌNH CHI TIẾT ĐƠN (DH_*) ======================
+const DH_DEFS = {
+  dh_info:{label:'Thông tin đơn (DH_Info)', single:true, cols:['kh','du_an','dia_chi','ma_crm','task_tong','lien_he','lien_he_meta','sales','mua_hang','ncc','ncc_meta','trang_thai','trang_thai_meta','han_giao','han_meta','bao_hanh','hinh_thuc_tt','buoc','cap_nhat','nguon','phai_thu','da_thu','gantt_months','gantt_today','bao_gia','chat_url','canh_bao','note','tt_note','mo_ta']},
+  dh_congviec:{label:'Cây công việc (DH_CongViec)', cols:[{k:'cap'},{k:'ten'},{k:'trang_thai'},{k:'pct',t:'num'},{k:'task_id'}]},
+  dh_todo:{label:'Việc cần làm (DH_ToDo)', cols:[{k:'uu_tien'},{k:'noi_dung'},{k:'who'}]},
+  dh_timeline:{label:'Dòng thời gian (DH_Timeline)', cols:[{k:'nguon'},{k:'dt'},{k:'noi_dung'}]},
+  dh_hangmuc:{label:'Hạng mục (DH_HangMuc)', cols:[{k:'stt',t:'num'},{k:'nhom'},{k:'bo_phan'},{k:'model'},{k:'thong_so'},{k:'sl'},{k:'dvt'},{k:'ghi_chu'}]},
+  dh_hoso:{label:'Hồ sơ (DH_HoSo)', cols:[{k:'ngay'},{k:'tep'},{k:'loai'},{k:'loai_mau'},{k:'ghi_chu'}]},
+  dh_gantt:{label:'Gantt (DH_Gantt)', cols:[{k:'pha'},{k:'meta'},{k:'gantt_offset',t:'num'},{k:'gantt_width',t:'num'},{k:'mau'}]}
+};
+let DH_ORDER = null;
+
 let ME = null; // {id,email,vai_tro,...}
 
 // ====================== TIỆN ÍCH ======================
@@ -121,7 +133,7 @@ function renderLogin(){
 
 function renderApp(){
   const tabs = Object.keys(TABLES).map(k=>`<button data-tab="${k}">${TABLES[k].label}</button>`).join('')
-    + `<button data-tab="__acc">Tài khoản &amp; quyền</button><button data-tab="__sig">Tín hiệu</button>`;
+    + `<button data-tab="__dh">Chi tiết đơn</button><button data-tab="__acc">Tài khoản &amp; quyền</button><button data-tab="__sig">Tín hiệu</button>`;
   $('#app').innerHTML = `
     <header>
       <h1>TKS ADMIN</h1>
@@ -138,6 +150,7 @@ function renderApp(){
 }
 function openTab(t){
   $('#nav').querySelectorAll('button').forEach(b=> b.classList.toggle('act', b.dataset.tab===t));
+  if(t==='__dh') return renderOrderDetail();
   if(t==='__acc') return renderAccounts();
   if(t==='__sig') return renderSignals();
   renderTable(t);
@@ -285,6 +298,65 @@ window.addSignal = async ()=>{
 window.cancelSignal = async (id)=>{
   const { error } = await sb.from('tin_hieu').update({trang_thai:'da_huy'}).eq('id',id);
   if(error) return toast(error.message,'err'); toast('Đã huỷ cờ','ok'); renderSignals();
+};
+
+// ====================== CHI TIẾT ĐƠN (DH_*) ======================
+async function renderOrderDetail(){
+  const { data:orders } = await sb.from('donhang').select('order_id,kh').order('order_id');
+  $('#main').innerHTML = `<div class="card"><div class="row">
+    <h3 style="margin:0">Chi tiết đơn hàng</h3>
+    <select class="f" id="ordSel" style="max-width:420px">
+      <option value="">— Chọn đơn để sửa chi tiết —</option>
+      ${(orders||[]).map(o=>`<option value="${o.order_id}" ${o.order_id==DH_ORDER?'selected':''}>${o.order_id} · ${esc(o.kh||'')}</option>`).join('')}
+    </select></div>
+    <div class="hint">Chọn đơn → sửa Thông tin / Cây việc / ToDo / Timeline / Hạng mục / Hồ sơ / Gantt. Lưu thẳng vào Supabase (web đơn lên ngay khi tải lại).</div>
+    <div id="dhArea" style="margin-top:14px"></div></div>`;
+  $('#ordSel').onchange = e => { DH_ORDER = e.target.value; loadDH(); };
+  if(DH_ORDER) loadDH();
+}
+async function loadDH(){
+  if(!DH_ORDER){ $('#dhArea').innerHTML=''; return; }
+  let html='';
+  for(const name in DH_DEFS){
+    const cfg = DH_DEFS[name];
+    const { data, error } = await sb.from(name).select('*').eq('order_id', DH_ORDER).order(cfg.single?'order_id':'id');
+    if(error){ toast(error.message,'err'); continue; }
+    if(cfg.single){
+      const r=(data&&data[0])||{};
+      html += `<h3 class="sec">${cfg.label}</h3><div class="card" id="dhinfo"><div class="tbl-wrap"><table><tbody>`+
+        cfg.cols.map(k=>`<tr><th style="width:150px">${k}</th><td><input data-k="${k}" value="${esc(r[k]==null?'':r[k])}"></td></tr>`).join('')+
+        `</tbody></table></div><div class="row" style="margin-top:8px"><button class="sm pri" onclick="saveDHInfo()">Lưu thông tin</button></div></div>`;
+    } else {
+      const head='<tr>'+cfg.cols.map(c=>`<th>${c.k}</th>`).join('')+'<th style="width:110px">—</th></tr>';
+      const body=(data||[]).map(r=>dhRowHtml(name,r,cfg)).join('');
+      html += `<h3 class="sec">${cfg.label} <button class="sm pri" style="margin-left:8px" onclick="dhAdd('${name}')">+ dòng</button></h3><div class="card"><div class="tbl-wrap"><table id="t_${name}">${head}${body}</table></div></div>`;
+    }
+  }
+  $('#dhArea').innerHTML = html;
+}
+function dhRowHtml(name,r,cfg){
+  const cells=cfg.cols.map(c=>`<td><input data-k="${c.k}" value="${esc(r[c.k]==null?'':r[c.k])}"></td>`).join('');
+  return `<tr data-id="${r.id==null?'':r.id}">${cells}<td><button class="sm pri" onclick="dhSave('${name}',this)">Lưu</button><button class="sm dng" onclick="dhDel('${name}',this)">Xoá</button></td></tr>`;
+}
+window.dhAdd=name=>{ const cfg=DH_DEFS[name]; document.querySelector('#t_'+name).insertAdjacentHTML('beforeend', dhRowHtml(name,{},cfg)); };
+window.dhSave=async(name,btn)=>{
+  const cfg=DH_DEFS[name]; const tr=btn.closest('tr'); const id=tr.dataset.id;
+  const o={order_id:Number(DH_ORDER)};
+  tr.querySelectorAll('[data-k]').forEach(i=>{let v=i.value; const c=cfg.cols.find(x=>x.k===i.dataset.k); if(v==='')v=null; else if(c&&c.t==='num')v=Number(v); o[i.dataset.k]=v;});
+  const res = id ? await sb.from(name).update(o).eq('id',id) : await sb.from(name).insert(o);
+  if(res.error)return toast(res.error.message,'err'); toast('Đã lưu','ok'); loadDH();
+};
+window.dhDel=async(name,btn)=>{
+  const tr=btn.closest('tr'); const id=tr.dataset.id; if(!id){tr.remove();return;}
+  if(!confirm('Xoá dòng này?'))return;
+  const {error}=await sb.from(name).delete().eq('id',id);
+  if(error)return toast(error.message,'err'); toast('Đã xoá','ok'); loadDH();
+};
+window.saveDHInfo=async()=>{
+  const o={order_id:Number(DH_ORDER)};
+  document.querySelectorAll('#dhinfo [data-k]').forEach(i=>{o[i.dataset.k]=i.value===''?null:i.value;});
+  const {error}=await sb.from('dh_info').upsert(o);
+  if(error)return toast(error.message,'err'); toast('Đã lưu thông tin đơn','ok');
 };
 
 init();
