@@ -223,7 +223,13 @@ function cleanVal(v){
 }
 function fmtMoney(v){const n=Number(String(v).replace(/[^\d.-]/g,''));return isNaN(n)?(v||'0'):n.toLocaleString('vi-VN');}
 
+const TKS_SB_URL2='https://yncksjmovgfsyvhkztgw.supabase.co';
+const TKS_SB_ANON2='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InluY2tzam1vdmdmc3l2aGt6dGd3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEyNDk1NjIsImV4cCI6MjA5NjgyNTU2Mn0.y-4DDvM8X2rBRpG0im2qNP-S1c_50IoxCIOVhYN0WpE';
+const TKS_USE_SB2=(new URLSearchParams(location.search).get('src')||'supabase')!=='sheet';
+const TKS_DH_TBL={DonHang:'donhang',DH_Info:'dh_info',DH_CongViec:'dh_congviec',DH_ToDo:'dh_todo',DH_Timeline:'dh_timeline',DH_HangMuc:'dh_hangmuc',DH_HoSo:'dh_hoso',DH_Gantt:'dh_gantt'};
+async function gvizSupabase(tab){var t=TKS_DH_TBL[tab];if(!t)return [];var sel='*';if(t==='dh_gantt')sel='order_id,pha,meta,offset:gantt_offset,width:gantt_width,mau';var u=TKS_SB_URL2+'/rest/v1/'+t+'?select='+encodeURIComponent(sel);var arr=await (await fetch(u,{headers:{apikey:TKS_SB_ANON2,Authorization:'Bearer '+TKS_SB_ANON2}})).json();return (Array.isArray(arr)?arr:[]).map(function(o){var r={};for(var k in o){r[k]=(o[k]==null?'':o[k]);}return r;});}
 async function gviz(tab){
+  if(TKS_USE_SB2)return gvizSupabase(tab);
   const url=`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&headers=1&sheet=${encodeURIComponent(tab)}`;
   const txt=await (await fetch(url)).text();
   const json=JSON.parse(txt.substring(txt.indexOf('{'), txt.lastIndexOf('}')+1));
