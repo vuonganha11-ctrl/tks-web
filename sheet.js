@@ -74,7 +74,13 @@
     return out;
   }
   
-  async function fetchTab(sheetId, tab) {
+  var TKS_USE_SUPABASE=(new URLSearchParams(location.search).get("src")||"supabase")!=="sheet";
+var TKS_SB_URL="https://yncksjmovgfsyvhkztgw.supabase.co";
+var TKS_SB_ANON="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InluY2tzam1vdmdmc3l2aGt6dGd3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEyNDk1NjIsImV4cCI6MjA5NjgyNTU2Mn0.y-4DDvM8X2rBRpG0im2qNP-S1c_50IoxCIOVhYN0WpE";
+var TKS_TBL={Meta:["meta","key"],KPI:["kpi","id"],NhanSu:["nhansu","id"],DoanhSo:["doanhso",""],LichCongTac:["lichcongtac","id"],SuCo:["suco","id"],RuiRo:["ruiro","id"],DonHang:["donhang",""]};
+async function fetchTabSupabase(tab){var m=TKS_TBL[tab];if(!m)return [];var u=TKS_SB_URL+"/rest/v1/"+m[0]+"?select=*"+(m[1]?"&order="+m[1]:"");var res=await fetch(u,{headers:{apikey:TKS_SB_ANON,Authorization:"Bearer "+TKS_SB_ANON},cache:"no-store"});if(!res.ok)throw new Error("SB HTTP "+res.status+" "+tab);var arr=await res.json();return arr.map(function(o){var r={};for(var k in o){var kk=(k==="descr")?"desc":k;r[kk]=(o[k]==null?"":o[k]);r["_f_"+kk]=r[kk];}return r;});}
+async function fetchTab(sheetId, tab) {
+  if(TKS_USE_SUPABASE)return fetchTabSupabase(tab);
     var url = gvizUrl(sheetId, tab);
     var res = await fetch(url, { cache: "no-store" });
     if (!res.ok) throw new Error("HTTP " + res.status + " khi đọc tab " + tab);
