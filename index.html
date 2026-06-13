@@ -634,9 +634,9 @@ function renderGantt(lich, nhanSu){
   function rng(dt){dt=String(dt).trim(); var r=dt.match(/(\d{1,2})\s*[-–]\s*(\d{1,2})\/(\d{1,2})/); if(r){var mo=+r[3]-1;return {s:new Date(YEAR,mo,+r[1]),e:new Date(YEAR,mo,+r[2])};} var mm=dt.match(/(\d{1,2})\/(\d{1,2})/); if(mm){var d=new Date(YEAR,+mm[2]-1,+mm[1]);return {s:d,e:d};} return null;}
   var pal=["#3d6695","#2f7d4f","#e08a00","#7a3a9b","#c0392b","#16a085","#2c82c9","#8e44ad"];
   var taskColor={},ci=0,bars=[];
-  lich.forEach(function(r){ if((r.cot||"").toLowerCase()!=="field") return; var R=rng(r.dt); if(!R) return; String(r.ppl||"").split(/[,\/]/).forEach(function(nm){ var p=match(nm); if(!p) return; bars.push({ten:p.ten,task:r.task_id||"",s:R.s,e:R.e,desc:r.desc||""}); }); });
+  lich.forEach(function(r){ if((r.cot||"").toLowerCase()!=="field") return; var R=rng(r.dt); if(!R) return; var _pSrc=r.ppl||String(r.desc||r.descr||"").split(/\s*[\-\u2013\u2014]\s*/)[0]||""; String(_pSrc).split(/[,\/]/).forEach(function(nm){ var p=match(nm); if(!p) return; bars.push({ten:p.ten,task:r.task_id||"",s:R.s,e:R.e,desc:r.desc||r.descr||""}); }); });
   bars=bars.filter(function(b){return b.e>=startWin&&b.s<=endWin;});
-  if(!bars.length){el.innerHTML="";return;}
+  if(!bars.length){el.innerHTML='<p style="color:var(--grey);padding:8px 0;font-size:13px">Không có lịch công tác hiện trường nào trong 3 tuần qua.</p>';return;}
   var order={}; nhanSu.forEach(function(r,i){order[r.ten]=i;});
   var persons=[]; bars.forEach(function(b){if(persons.indexOf(b.ten)<0)persons.push(b.ten);});
   persons.sort(function(a,b){return (order[a]==null?999:order[a])-(order[b]==null?999:order[b]);});
