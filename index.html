@@ -626,7 +626,7 @@ function renderGantt(lich, nhanSu){
   lich=lich||[]; nhanSu=nhanSu||[];
   var DAY=86400000, YEAR=(new Date()).getFullYear();
   var today=new Date(); today.setHours(0,0,0,0);
-  var startWin=new Date(today.getTime()-14*DAY), endWin=new Date(today.getTime()+7*DAY);
+  var startWin=new Date(today.getTime()-20*DAY), endWin=new Date(today.getTime()+4*DAY);
   var nDays=Math.round((endWin-startWin)/DAY)+1;
   var tks=nhanSu.map(function(r){return {ten:r.ten,nhom:(r.nhom||"").toLowerCase()};});
   function strip(s){return String(s).trim().replace(/\((.*?)\)/g,"").replace(/^(a\.|c\.|ng\.|e\.|mr\.|ms\.|anh |chú |em |ông )\s*/i,"").trim();}
