@@ -1,4 +1,4 @@
-  <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="vi">
 <head>
 <meta charset="UTF-8">
@@ -708,7 +708,10 @@ function renderImports(rows) {
     list = list.filter(function (r) { var en = _end(r.dt); return en === null || en >= _cut; });
     total += list.length;
     var items = list.map(function (r) {
-      var isToday = String(r.today) === "1" || String(r.today).toLowerCase() === "true";
+      var en = _end(r.dt);
+      var isToday = en !== null && en === _t.getTime();
+      var isStale = d.key === "hq" && en !== null && (_t.getTime() - en) > 2 * 86400000;
+      var staleDay = isStale ? Math.floor((_t.getTime() - en) / 86400000) : 0;
       var meta = [];
       if (r.kien) meta.push(esc(r.kien) + " kiện");
       if (r.kg) meta.push(esc(r.kg) + " kg");
@@ -721,7 +724,8 @@ function renderImports(rows) {
       if (r.kh) dest.push(esc(r.kh));
       if (r.du_an) dest.push(esc(r.du_an));
       var destLine = dest.length ? "<div class=\"ppl\">" + dest.join(" · ") + "</div>" : "";
-      return "<div class=\"titem" + (isToday ? " today" : "") + "\"><div class=\"dt\">" + esc(r.dt) + (isToday ? " · Hôm nay" : "") + st + "</div><div class=\"desc\">" + headLine + link + "</div>" + mdl + destLine + "</div>";
+      var staleTag = isStale ? " <span style=\"background:var(--red-soft);color:var(--red);font-size:10px;font-weight:800;padding:1px 7px;border-radius:5px\">&#9888; " + staleDay + " ngày</span>" : "";
+      return "<div class=\"titem" + (isToday ? " today" : "") + "\"><div class=\"dt\">" + esc(r.dt) + (isToday ? " · Hôm nay" : "") + staleTag + st + "</div><div class=\"desc\">" + headLine + link + "</div>" + mdl + destLine + "</div>";
     }).join("") || "<div class=\"titem\"><div class=\"desc\" style=\"color:var(--grey)\">Chưa có lô hàng trong 7 ngày.</div></div>";
     var chat = CHAT[d.key] ? "<a class=\"th-chat\" target=\"_blank\" rel=\"noopener\" href=\"" + CHAT[d.key] + "\">Chat ↗</a>" : "";
     return "<div class=\"tcol\"><div class=\"th " + d.cls + "\"><span class=\"ic\">" + d.ic + "</span>" + d.name + chat + "</div><div class=\"titems\">" + items + "</div></div>";
