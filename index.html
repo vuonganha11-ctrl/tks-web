@@ -432,6 +432,18 @@ a.pstat .l{color:var(--steel)}
 <script src="auth.js"></script>
 <script src="sheet.js"></script>
 <script>
+function fmtDate(s){
+  if(!s) return '';
+  var d=new Date(s);
+  if(isNaN(d.getTime())) return String(s).replace('T',' ').substring(0,16);
+  var dd=String(d.getDate()).padStart(2,'0');
+  var mm=String(d.getMonth()+1).padStart(2,'0');
+  var yyyy=d.getFullYear();
+  var hh=String(d.getHours()).padStart(2,'0');
+  var mi=String(d.getMinutes()).padStart(2,'0');
+  return dd+'/'+mm+'/'+yyyy+' '+hh+':'+mi;
+}
+
 /* ====================================================================
    CẤU HÌNH — dán Sheet ID của bạn vào đây
    Lấy ID trong URL Sheet: docs.google.com/spreadsheets/d/<ID>/edit
@@ -547,7 +559,7 @@ function renderOrders(rows) {
       "<td>" + esc(r.giai_doan) + "</td>" +
       '<td><div class="pb"><div class="lab">' + pct + '%</div><div class="bar"><i style="width:' + pct + "%;background:var(--" + bar + ')"></i></div></div></td>' +
       "<td>" + esc(r.han_congno) + "</td>" +
-      '<td class="cell-ts">' + (r.cap_nhat ? esc(r.cap_nhat) : '—') + "</td>" +
+      '<td class="cell-ts">' + (fmtDate(r.cap_nhat) ? esc(fmtDate(r.cap_nhat)) : '—') + "</td>" +
       '<td><div class="btns">' + crm + detail + "</div></td>" +
       "</tr>";
   }
