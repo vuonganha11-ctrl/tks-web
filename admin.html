@@ -71,7 +71,7 @@ const TABLES = {
   lichcongtac:{label:'Lịch công tác', pk:'id', order:'id', cols:[
     {k:'cot',w:60},{k:'dt',w:90},{k:'descr'},{k:'task_id',w:80},{k:'ppl',w:160},{k:'today',t:'num',w:55}]},
   donhang:    {label:'Đơn hàng', pk:'order_id', order:'order_id', cols:[
-    {k:'order_id',t:'num',w:80},{k:'kh'},{k:'kh_sub'},{k:'task_id',w:80},{k:'giai_doan',w:120},{k:'tien_do',w:70},{k:'han_congno'}]},
+    {k:'order_id',t:'num',w:80},{k:'khoi',sel:true,label:'Khối',w:130},{k:'kh'},{k:'kh_sub'},{k:'task_id',w:80},{k:'giai_doan',w:120},{k:'tien_do',w:70},{k:'han_congno'}]},
   meta:       {label:'Meta', pk:'key', order:'key', cols:[{k:'key',w:140},{k:'value'}]},
 };
 const ROLES = ['admin','truong_phong','dieu_phoi','ky_thuat'];
@@ -88,6 +88,9 @@ const DH_DEFS = {
 };
 let DH_ORDER = null;
 
+const KHOI_OPTS=[['proc','Đang xử lý'],['uu_tien','Ưu tiên'],['dich_vu','Dịch vụ TKS'],['cham_giao','Chậm giao']];
+function khoiFlag(v){ v=String(v==null?'':v).trim().toLowerCase(); return v!==''&&v!=='0'&&v!=='false'&&v!=='no'&&v!=='không'&&v!=='khong'; }
+function orderBlock(r){ if(khoiFlag(r.uu_tien))return'uu_tien'; if(khoiFlag(r.dich_vu))return'dich_vu'; if(khoiFlag(r.cham_giao))return'cham_giao'; return'proc'; }
 let ME = null; // {id,email,vai_tro,...}
 
 // ====================== TIỆN ÍCH ======================
@@ -167,7 +170,7 @@ async function renderTable(name){
     <div class="hint">Sửa trực tiếp ô → bấm <b>Lưu</b> ở dòng. Quyền ghi theo vai trò (RLS) — nếu bị chặn sẽ báo lỗi.</div></div>`;
   const { data, error } = await sb.from(name).select('*').order(cfg.order, {ascending:true});
   if(error) return toast(error.message,'err');
-  const head = '<tr>'+cfg.cols.map(c=>`<th${c.w?` style="width:${c.w}px"`:''}>${c.k}</th>`).join('')+'<th style="width:120px">—</th></tr>';
+  const head = '<tr>'+cfg.cols.map(c=>`<th${c.w?` style="width:${c.w}px"`:''}>${c.label||c.k}</th>`).join('')+'<th style="width:120px">—</th></tr>';
   const body = (data||[]).map(r=>rowHtml(name,r)).join('');
   $('#tb').innerHTML = head + body;
 }
@@ -175,6 +178,7 @@ function rowHtml(name,r){
   const cfg=TABLES[name];
   const pkv = Array.isArray(cfg.pk)? cfg.pk.map(k=>r[k]).join('|') : r[cfg.pk];
   const cells = cfg.cols.map(c=>{
+    if(c.sel){ var _c=orderBlock(r); var _o=KHOI_OPTS.map(function(p){return '<option value="'+p[0]+'"'+(p[0]===_c?' selected':'')+'>'+esc(p[1])+'</option>';}).join(''); return '<td><select data-k="'+c.k+'">'+_o+'</select></td>'; }
     const v = r[c.k]==null?'':r[c.k];
     return `<td><input data-k="${c.k}" value="${esc(v)}"></td>`;
   }).join('');
@@ -186,13 +190,14 @@ window.addRow = name => { const empty={}; document.querySelector('#tb').insertAd
 
 function collect(tr,cfg){
   const o={};
-  tr.querySelectorAll('input[data-k]').forEach(inp=>{
+  tr.querySelectorAll('[data-k]').forEach(inp=>{
     let v = inp.value;
     const c = cfg.cols.find(x=>x.k===inp.dataset.k);
     if(v==='') v = null;
     else if(c && c.t==='num') v = Number(v);
     o[inp.dataset.k]=v;
   });
+  if('khoi' in o){ var b=o.khoi; delete o.khoi; o.uu_tien=b==='uu_tien'?1:null; o.dich_vu=b==='dich_vu'?1:null; o.cham_giao=b==='cham_giao'?1:null; }
   return o;
 }
 window.saveRow = async (name, btn)=>{
