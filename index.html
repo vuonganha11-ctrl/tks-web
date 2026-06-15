@@ -843,18 +843,40 @@ function renderAll(d) {
   var Q=String.fromCharCode(63), AMP=String.fromCharCode(38);
   var SBU=null, SBK=null, READY=false;
   var LBL={proc:'Đang xử lý',uu_tien:'Ưu tiên',dich_vu:'Dịch vụ TKS',cham_giao:'Chậm giao'};
+  var KEY='sb-'+'yncksjmovgfsyvhkztgw'+'-auth-token';
   window.__TKS_NOTES=window.__TKS_NOTES||{};
-  function sess(){ try{ var raw=localStorage.getItem('sb-'+'yncksjmovgfsyvhkztgw'+'-auth-token'); if(!raw) return null; var j=JSON.parse(raw); var at=j.access_token||(j.currentSession&&j.currentSession.access_token); var u=j.user||(j.currentSession&&j.currentSession.user); var ex=j.expires_at||(j.currentSession&&j.currentSession.expires_at); if(!at) return null; if(ex&&(Date.now()/1000)>ex) return null; return {token:at,user:u}; }catch(e){ return null; } }
-  var S=sess();
-  window.__TKS_CAN_EDIT=!!S;
-  window.__TKS_ME={id:S&&S.user&&S.user.id, ten:(S&&S.user&&S.user.email)||''};
+  function rawSess(){ try{ var raw=localStorage.getItem(KEY); if(!raw) return null; var j=JSON.parse(raw); return (j&&(j.access_token||j.refresh_token))?j:null; }catch(e){ return null; } }
+  function storeSess(j){ try{ localStorage.setItem(KEY, JSON.stringify(j)); }catch(e){} }
+  var S=rawSess();
+  window.__TKS_CAN_EDIT=!!(S && S.refresh_token);
+  var U=S&&S.user;
+  window.__TKS_ME={id:U&&U.id, ten:(U&&U.email)||''};
   function flg(v){ v=String(v==null?'':v).trim().toLowerCase(); return v!==''&&v!=='0'&&v!=='false'&&v!=='no'&&v!=='không'&&v!=='khong'; }
   function blkOf(r){ return flg(r.uu_tien)?'uu_tien':flg(r.dich_vu)?'dich_vu':flg(r.cham_giao)?'cham_giao':'proc'; }
-  function toast(m,ok){ var d=document.createElement('div'); d.textContent=m; d.style.cssText='position:fixed;right:18px;bottom:18px;z-index:9999;max-width:320px;background:'+(ok?'#2f7d4f':'#c0392b')+';color:#fff;padding:10px 15px;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.25);font:600 13px/1.4 IBM Plex Sans,sans-serif'; document.body.appendChild(d); setTimeout(function(){ d.remove(); },3800); }
-  function hdr(extra){ var h={apikey:SBK, Authorization:'Bearer '+((sess()||{}).token||SBK), 'Content-Type':'application/json'}; if(extra){for(var k in extra)h[k]=extra[k];} return h; }
+  function toast(m,ok){ var d=document.createElement('div'); d.textContent=m; d.style.cssText='position:fixed;right:18px;bottom:18px;z-index:9999;max-width:340px;background:'+(ok?'#2f7d4f':'#c0392b')+';color:#fff;padding:10px 15px;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.25);font:600 13px/1.4 IBM Plex Sans,sans-serif'; document.body.appendChild(d); setTimeout(function(){ d.remove(); },4200); }
+  async function ensureToken(){
+    var j=rawSess(); if(!j) return null;
+    if(j.access_token && j.expires_at && (Date.now()/1000) < (j.expires_at-30)) return j.access_token;
+    if(!j.refresh_token || !READY) return j.access_token||null;
+    try{
+      var res=await fetch(SBU+'/auth/v1/token'+Q+'grant_type=refresh_token',{method:'POST',headers:{apikey:SBK,'Content-Type':'application/json'},body:JSON.stringify({refresh_token:j.refresh_token})});
+      var d=await res.json();
+      if(res.ok && d.access_token){ var ne=Object.assign({},j,d,{expires_at:Math.floor(Date.now()/1000)+(d.expires_in||3600)}); storeSess(ne); if(d.user){ window.__TKS_ME.id=d.user.id; if(!window.__TKS_ME.ten) window.__TKS_ME.ten=d.user.email||''; } return d.access_token; }
+    }catch(e){}
+    return j.access_token||null;
+  }
+  function hdr(tk,extra){ var h={apikey:SBK, Authorization:'Bearer '+(tk||SBK), 'Content-Type':'application/json'}; if(extra){for(var k in extra)h[k]=extra[k];} return h; }
   var creds=fetch('sheet.js').then(function(r){return r.text();}).then(function(t){ var u=t.match(/TKS_SB_URL\s*=\s*"([^"]+)"/); var k=t.match(/TKS_SB_ANON\s*=\s*"([^"]+)"/); SBU=u&&u[1]; SBK=k&&k[1]; READY=!!(SBU&&SBK); });
-  creds.then(function(){ if(!READY) return; var url=SBU+'/rest/v1/tin_hieu'+Q+'doi_tuong=eq.donhang'+AMP+'hanh_dong=eq.doi_khoi'+AMP+'order=thoi_gian.desc'+AMP+'select=doi_tuong_id,ghi_chu'; return fetch(url,{headers:hdr()}).then(function(r){return r.ok?r.json():[];}).then(function(a){ (a||[]).forEach(function(x){ if(!window.__TKS_NOTES[x.doi_tuong_id]) window.__TKS_NOTES[x.doi_tuong_id]=x.ghi_chu; }); if(window.__TKS_DONHANG&&window.renderOrders) renderOrders(window.__TKS_DONHANG); }).catch(function(){}); });
-  creds.then(function(){ if(READY&&S){ fetch(SBU+'/rest/v1/nguoi_dung'+Q+'id=eq.'+encodeURIComponent(S.user.id)+AMP+'select=ho_ten,email',{headers:hdr()}).then(function(r){return r.ok?r.json():[];}).then(function(a){ if(a&&a[0]) window.__TKS_ME.ten=a[0].ho_ten||a[0].email||window.__TKS_ME.ten; }).catch(function(){}); } });
+  creds.then(async function(){
+    if(!READY) return;
+    var tk=await ensureToken();
+    try{ var url=SBU+'/rest/v1/tin_hieu'+Q+'doi_tuong=eq.donhang'+AMP+'hanh_dong=eq.doi_khoi'+AMP+'order=thoi_gian.desc'+AMP+'select=doi_tuong_id,ghi_chu';
+      var a=await fetch(url,{headers:hdr(tk)}).then(function(r){return r.ok?r.json():[];});
+      (a||[]).forEach(function(x){ if(!window.__TKS_NOTES[x.doi_tuong_id]) window.__TKS_NOTES[x.doi_tuong_id]=x.ghi_chu; });
+      if(window.__TKS_DONHANG&&window.renderOrders) renderOrders(window.__TKS_DONHANG);
+    }catch(e){}
+    if(window.__TKS_ME.id){ try{ var p=await fetch(SBU+'/rest/v1/nguoi_dung'+Q+'id=eq.'+encodeURIComponent(window.__TKS_ME.id)+AMP+'select=ho_ten,email',{headers:hdr(tk)}).then(function(r){return r.ok?r.json():[];}); if(p&&p[0]) window.__TKS_ME.ten=p[0].ho_ten||p[0].email||window.__TKS_ME.ten; }catch(e){} }
+  });
   async function tksMove(oid, selEl){
     if(!READY){ toast('Đang tải cấu hình, thử lại sau giây lát.'); return; }
     var to=selEl.value; var rows=window.__TKS_DONHANG||[]; var r=null;
@@ -862,19 +884,20 @@ function renderAll(d) {
     if(!r) return; var from=blkOf(r); if(from===to) return;
     selEl.disabled=true;
     try{
+      var tk=await ensureToken();
+      if(!tk){ throw new Error('Phiên đăng nhập đã hết hạn — mở lại trang Quản trị để đăng nhập.'); }
       var body={uu_tien:to==='uu_tien'?1:null, dich_vu:to==='dich_vu'?1:null, cham_giao:to==='cham_giao'?1:null};
-      var res=await fetch(SBU+'/rest/v1/donhang'+Q+'order_id=eq.'+encodeURIComponent(oid),{method:'PATCH',headers:hdr({Prefer:'return=minimal'}),body:JSON.stringify(body)});
+      var res=await fetch(SBU+'/rest/v1/donhang'+Q+'order_id=eq.'+encodeURIComponent(oid),{method:'PATCH',headers:hdr(tk,{Prefer:'return=minimal'}),body:JSON.stringify(body)});
       if(!res.ok){ var tx=await res.text(); throw new Error('HTTP '+res.status+(tx?(' '+tx.slice(0,140)):'')); }
       r.uu_tien=body.uu_tien; r.dich_vu=body.dich_vu; r.cham_giao=body.cham_giao;
       var note=(window.__TKS_ME.ten||'?')+': '+LBL[from]+' → '+LBL[to];
       window.__TKS_NOTES[oid]=note;
-      try{ await fetch(SBU+'/rest/v1/tin_hieu',{method:'POST',headers:hdr({Prefer:'return=minimal'}),body:JSON.stringify({doi_tuong:'donhang',doi_tuong_id:String(oid),hanh_dong:'doi_khoi',ghi_chu:note,nguoi_gui:window.__TKS_ME.id})}); }catch(e){}
+      try{ await fetch(SBU+'/rest/v1/tin_hieu',{method:'POST',headers:hdr(tk,{Prefer:'return=minimal'}),body:JSON.stringify({doi_tuong:'donhang',doi_tuong_id:String(oid),hanh_dong:'doi_khoi',ghi_chu:note,nguoi_gui:window.__TKS_ME.id})}); }catch(e){}
       if(window.renderOrders) renderOrders(window.__TKS_DONHANG);
       toast('Đã chuyển sang "'+LBL[to]+'"',true);
     }catch(e){ selEl.disabled=false; selEl.value=from; toast('Không đổi được khối: '+e.message); }
   }
   document.addEventListener('change', function(e){ var t=e.target; if(t&&t.classList&&t.classList.contains('khoi-sel')){ tksMove(t.getAttribute('data-oid'), t); } });
 })();
-</script>
-</body>
+</script></body>
 </html>
