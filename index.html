@@ -297,6 +297,10 @@ a.pstat .l{color:var(--steel)}
 .g-track{position:relative;height:42px;background-image:repeating-linear-gradient(90deg,var(--line) 0,var(--line) 1px,transparent 1px,transparent 44px)}
 .g-bar{position:absolute;top:7px;height:28px;border-radius:14px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:11px;text-decoration:none;box-shadow:0 1px 3px rgba(15,39,66,.25);overflow:hidden;white-space:nowrap;padding:0 6px;cursor:pointer}
 .g-todayline{position:absolute;top:0;bottom:0;width:2px;background:var(--red);z-index:4;pointer-events:none}
+.khoi-sel{font-family:'IBM Plex Sans',sans-serif;font-size:12px;padding:5px 7px;border:1px solid var(--line);border-radius:7px;background:#fff;color:var(--navy);font-weight:600;max-width:150px}
+.khoi-sel:hover{border-color:var(--steel)}
+.khoi-sel:disabled{opacity:.5}
+.khoi-note{font-size:11px;color:var(--steel);margin-top:3px;font-style:italic}
 </style>
 </head>
 <body>
@@ -543,24 +547,29 @@ function renderKPI(rows) {
 }
 function renderOrders(rows) {
   rows = rows || [];
+  window.__TKS_DONHANG = rows;
   function flag(v){ v = String(v == null ? "" : v).trim().toLowerCase(); return v !== "" && v !== "0" && v !== "false" && v !== "no" && v !== "không" && v !== "khong"; }
   function isPri(r){ return flag(r && r.uu_tien); }
   function isSvc(r){ return flag(r && r.dich_vu); }
   function isLate(r){ return flag(r && r.cham_giao); }
   function rowHtml(r) {
     var pct = Math.max(0, Math.min(100, num(r.tien_do)));
+    var _blk = isPri(r) ? 'uu_tien' : isSvc(r) ? 'dich_vu' : isLate(r) ? 'cham_giao' : 'proc';
+    var _opts = [['proc','Đang xử lý'],['uu_tien','Ưu tiên'],['dich_vu','Dịch vụ TKS'],['cham_giao','Chậm giao']];
+    var _sel = window.__TKS_CAN_EDIT ? ('<select class="khoi-sel" data-oid="' + esc(r.order_id) + '" title="Đổi khối hiển thị trên dashboard">' + _opts.map(function(o){ return '<option value="' + o[0] + '"' + (o[0] === _blk ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') + '</select>') : '';
+    var _note = (window.__TKS_NOTES && window.__TKS_NOTES[r.order_id]) ? ('<div class="khoi-note">↪ ' + esc(window.__TKS_NOTES[r.order_id]) + '</div>') : '';
     var bar = pct >= 100 ? "green" : "steel";
     var idCell = r.task_id ? '<a class="id-link" target="_blank" href="' + task(r.task_id) + '">#' + esc(r.task_id) + "</a>" : "—";
     var crm = r.task_id ? '<a class="btn btn-crm" target="_blank" href="' + task(r.task_id) + '">CRM &#9656;</a>' : "";
     var detail = r.order_id ? '<a class="btn btn-detail" href="don-hang.html?id=' + encodeURIComponent(r.order_id) + '">Mở chi tiết</a>' : "";
     return "<tr>" +
-      '<td><div class="cust-nm">' + esc(r.kh) + '</div><div class="cust-sub">' + esc(r.kh_sub) + "</div></td>" +
+      '<td><div class="cust-nm">' + esc(r.kh) + '</div><div class="cust-sub">' + esc(r.kh_sub) + "</div>" + _note + "</td>" +
       "<td>" + idCell + "</td>" +
       "<td>" + esc(r.giai_doan) + "</td>" +
       '<td><div class="pb"><div class="lab">' + pct + '%</div><div class="bar"><i style="width:' + pct + "%;background:var(--" + bar + ')"></i></div></div></td>' +
       "<td>" + esc(r.han_congno) + "</td>" +
       '<td class="cell-ts">' + (fmtDate(r.cap_nhat) ? esc(fmtDate(r.cap_nhat)) : '—') + "</td>" +
-      '<td><div class="btns">' + crm + detail + "</div></td>" +
+      '<td>' + (_sel ? ('<div style="margin-bottom:6px">' + _sel + '</div>') : '') + '<div class="btns">' + crm + detail + "</div></td>" +
       "</tr>";
   }
   var pri = rows.filter(isPri);
@@ -827,6 +836,44 @@ function renderAll(d) {
     showBanner("Chưa cấu hình Sheet ID — đang hiển thị dữ liệu mẫu. Mở index.html và điền SHEET_ID để dùng dữ liệu thật.");
   }
   renderAll(data);
+})();
+</script>
+<script>
+(function(){
+  var Q=String.fromCharCode(63), AMP=String.fromCharCode(38);
+  var SBU=null, SBK=null, READY=false;
+  var LBL={proc:'Đang xử lý',uu_tien:'Ưu tiên',dich_vu:'Dịch vụ TKS',cham_giao:'Chậm giao'};
+  window.__TKS_NOTES=window.__TKS_NOTES||{};
+  function sess(){ try{ var raw=localStorage.getItem('sb-'+'yncksjmovgfsyvhkztgw'+'-auth-token'); if(!raw) return null; var j=JSON.parse(raw); var at=j.access_token||(j.currentSession&&j.currentSession.access_token); var u=j.user||(j.currentSession&&j.currentSession.user); var ex=j.expires_at||(j.currentSession&&j.currentSession.expires_at); if(!at) return null; if(ex&&(Date.now()/1000)>ex) return null; return {token:at,user:u}; }catch(e){ return null; } }
+  var S=sess();
+  window.__TKS_CAN_EDIT=!!S;
+  window.__TKS_ME={id:S&&S.user&&S.user.id, ten:(S&&S.user&&S.user.email)||''};
+  function flg(v){ v=String(v==null?'':v).trim().toLowerCase(); return v!==''&&v!=='0'&&v!=='false'&&v!=='no'&&v!=='không'&&v!=='khong'; }
+  function blkOf(r){ return flg(r.uu_tien)?'uu_tien':flg(r.dich_vu)?'dich_vu':flg(r.cham_giao)?'cham_giao':'proc'; }
+  function toast(m,ok){ var d=document.createElement('div'); d.textContent=m; d.style.cssText='position:fixed;right:18px;bottom:18px;z-index:9999;max-width:320px;background:'+(ok?'#2f7d4f':'#c0392b')+';color:#fff;padding:10px 15px;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.25);font:600 13px/1.4 IBM Plex Sans,sans-serif'; document.body.appendChild(d); setTimeout(function(){ d.remove(); },3800); }
+  function hdr(extra){ var h={apikey:SBK, Authorization:'Bearer '+((sess()||{}).token||SBK), 'Content-Type':'application/json'}; if(extra){for(var k in extra)h[k]=extra[k];} return h; }
+  var creds=fetch('sheet.js').then(function(r){return r.text();}).then(function(t){ var u=t.match(/TKS_SB_URL\s*=\s*"([^"]+)"/); var k=t.match(/TKS_SB_ANON\s*=\s*"([^"]+)"/); SBU=u&&u[1]; SBK=k&&k[1]; READY=!!(SBU&&SBK); });
+  creds.then(function(){ if(!READY) return; var url=SBU+'/rest/v1/tin_hieu'+Q+'doi_tuong=eq.donhang'+AMP+'hanh_dong=eq.doi_khoi'+AMP+'order=thoi_gian.desc'+AMP+'select=doi_tuong_id,ghi_chu'; return fetch(url,{headers:hdr()}).then(function(r){return r.ok?r.json():[];}).then(function(a){ (a||[]).forEach(function(x){ if(!window.__TKS_NOTES[x.doi_tuong_id]) window.__TKS_NOTES[x.doi_tuong_id]=x.ghi_chu; }); if(window.__TKS_DONHANG&&window.renderOrders) renderOrders(window.__TKS_DONHANG); }).catch(function(){}); });
+  creds.then(function(){ if(READY&&S){ fetch(SBU+'/rest/v1/nguoi_dung'+Q+'id=eq.'+encodeURIComponent(S.user.id)+AMP+'select=ho_ten,email',{headers:hdr()}).then(function(r){return r.ok?r.json():[];}).then(function(a){ if(a&&a[0]) window.__TKS_ME.ten=a[0].ho_ten||a[0].email||window.__TKS_ME.ten; }).catch(function(){}); } });
+  async function tksMove(oid, selEl){
+    if(!READY){ toast('Đang tải cấu hình, thử lại sau giây lát.'); return; }
+    var to=selEl.value; var rows=window.__TKS_DONHANG||[]; var r=null;
+    for(var i=0;i<rows.length;i++){ if(String(rows[i].order_id)===String(oid)){ r=rows[i]; break; } }
+    if(!r) return; var from=blkOf(r); if(from===to) return;
+    selEl.disabled=true;
+    try{
+      var body={uu_tien:to==='uu_tien'?1:null, dich_vu:to==='dich_vu'?1:null, cham_giao:to==='cham_giao'?1:null};
+      var res=await fetch(SBU+'/rest/v1/donhang'+Q+'order_id=eq.'+encodeURIComponent(oid),{method:'PATCH',headers:hdr({Prefer:'return=minimal'}),body:JSON.stringify(body)});
+      if(!res.ok){ var tx=await res.text(); throw new Error('HTTP '+res.status+(tx?(' '+tx.slice(0,140)):'')); }
+      r.uu_tien=body.uu_tien; r.dich_vu=body.dich_vu; r.cham_giao=body.cham_giao;
+      var note=(window.__TKS_ME.ten||'?')+': '+LBL[from]+' → '+LBL[to];
+      window.__TKS_NOTES[oid]=note;
+      try{ await fetch(SBU+'/rest/v1/tin_hieu',{method:'POST',headers:hdr({Prefer:'return=minimal'}),body:JSON.stringify({doi_tuong:'donhang',doi_tuong_id:String(oid),hanh_dong:'doi_khoi',ghi_chu:note,nguoi_gui:window.__TKS_ME.id})}); }catch(e){}
+      if(window.renderOrders) renderOrders(window.__TKS_DONHANG);
+      toast('Đã chuyển sang "'+LBL[to]+'"',true);
+    }catch(e){ selEl.disabled=false; selEl.value=from; toast('Không đổi được khối: '+e.message); }
+  }
+  document.addEventListener('change', function(e){ var t=e.target; if(t&&t.classList&&t.classList.contains('khoi-sel')){ tksMove(t.getAttribute('data-oid'), t); } });
 })();
 </script>
 </body>
