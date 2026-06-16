@@ -865,6 +865,9 @@ function renderAll(d) {
   window.__TKS_USERS=window.__TKS_USERS||{};
   function rawSess(){ try{ var raw=localStorage.getItem(KEY); if(!raw) return null; var j=JSON.parse(raw); return (j&&(j.access_token||j.refresh_token))?j:null; }catch(e){ return null; } }
   function storeSess(j){ try{ localStorage.setItem(KEY, JSON.stringify(j)); }catch(e){} }
+  function appUser(){ try{ if(window.TKS_Auth && TKS_Auth.getUser){ var u=TKS_Auth.getUser(); if(u) return u; } return JSON.parse(sessionStorage.getItem('tks_auth_v1')||'null'); }catch(e){ return null; } }
+  function operatorName(){ var a=appUser(); if(a && (a.ho_ten||a.tai_khoan)) return a.ho_ten||a.tai_khoan; return (window.__TKS_ME&&window.__TKS_ME.ten)||'?'; }
+  function uidByName(nm){ if(!nm) return null; for(var id in window.__TKS_USERS){ if(window.__TKS_USERS[id]===nm) return id; } return null; }
   var S=rawSess();
   window.__TKS_CAN_EDIT=!!(S && S.refresh_token);
   var U=S&&S.user;
@@ -876,6 +879,7 @@ function renderAll(d) {
   function blkOf(r){ var ks=flagKeys(); for(var i=0;i<ks.length;i++){ if(flg(r[ks[i]])) return ks[i]; } return 'proc'; }
   function p2(n){ return (n<10?'0':'')+n; }
   function fmtT(iso){ try{ var d=new Date(iso); if(isNaN(d.getTime())) return ''; return p2(d.getDate())+'/'+p2(d.getMonth()+1)+' '+p2(d.getHours())+':'+p2(d.getMinutes()); }catch(e){ return ''; } }
+  function whoFromNote(g, ng){ g=String(g||''); var i=g.indexOf(': '); if(i>=0) return g.slice(0,i); return window.__TKS_USERS[ng]||'?'; }
   function transOf(g){ g=String(g||''); var i=g.indexOf(': '); return i>=0? g.slice(i+2): g; }
   function noteStr(who, iso, trans){ var t=fmtT(iso); return who + (t?(' · '+t):'') + ': ' + trans; }
   function toast(m,ok){ var d=document.createElement('div'); d.textContent=m; d.style.cssText='position:fixed;right:18px;bottom:18px;z-index:9999;max-width:340px;background:'+(ok?'#2f7d4f':'#c0392b')+';color:#fff;padding:10px 15px;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.25);font:600 13px/1.4 IBM Plex Sans,sans-serif'; document.body.appendChild(d); setTimeout(function(){ d.remove(); },4200); }
@@ -897,11 +901,10 @@ function renderAll(d) {
     var tk=await ensureToken();
     try{ var us=await fetch(SBU+'/rest/v1/nguoi_dung'+Q+'select=id,ho_ten,email',{headers:hdr(tk)}).then(function(r){return r.ok?r.json():[];});
       (us||[]).forEach(function(u){ window.__TKS_USERS[u.id]=u.ho_ten||u.email||''; });
-      if(window.__TKS_ME.id && window.__TKS_USERS[window.__TKS_ME.id]) window.__TKS_ME.ten=window.__TKS_USERS[window.__TKS_ME.id];
     }catch(e){}
     try{ var url=SBU+'/rest/v1/tin_hieu'+Q+'doi_tuong=eq.donhang'+AMP+'hanh_dong=eq.doi_khoi'+AMP+'order=thoi_gian.desc'+AMP+'select=doi_tuong_id,ghi_chu,thoi_gian,nguoi_gui';
       var a=await fetch(url,{headers:hdr(tk)}).then(function(r){return r.ok?r.json():[];});
-      (a||[]).forEach(function(x){ if(window.__TKS_NOTES[x.doi_tuong_id]) return; var who=window.__TKS_USERS[x.nguoi_gui]; if(!who){ var g=String(x.ghi_chu||''); var i=g.indexOf(': '); who=i>=0? g.slice(0,i): '?'; } window.__TKS_NOTES[x.doi_tuong_id]=noteStr(who, x.thoi_gian, transOf(x.ghi_chu)); });
+      (a||[]).forEach(function(x){ if(window.__TKS_NOTES[x.doi_tuong_id]) return; window.__TKS_NOTES[x.doi_tuong_id]=noteStr(whoFromNote(x.ghi_chu,x.nguoi_gui), x.thoi_gian, transOf(x.ghi_chu)); });
       if(window.__TKS_DONHANG&&window.renderOrders) renderOrders(window.__TKS_DONHANG);
     }catch(e){}
   });
@@ -919,10 +922,11 @@ function renderAll(d) {
       var res=await fetch(SBU+'/rest/v1/donhang'+Q+'order_id=eq.'+encodeURIComponent(oid),{method:'PATCH',headers:hdr(tk,{Prefer:'return=minimal'}),body:JSON.stringify(body)});
       if(!res.ok){ var tx=await res.text(); throw new Error('HTTP '+res.status+(tx?(' '+tx.slice(0,140)):'')); }
       for(var i=0;i<ks.length;i++){ r[ks[i]]=body[ks[i]]; }
-      var who=(window.__TKS_ME.id && window.__TKS_USERS[window.__TKS_ME.id]) || window.__TKS_ME.ten || '?';
+      var who=operatorName();
       var trans=lblOf(from)+' → '+lblOf(to);
       window.__TKS_NOTES[oid]=noteStr(who, new Date().toISOString(), trans);
-      try{ await fetch(SBU+'/rest/v1/tin_hieu',{method:'POST',headers:hdr(tk,{Prefer:'return=minimal'}),body:JSON.stringify({doi_tuong:'donhang',doi_tuong_id:String(oid),hanh_dong:'doi_khoi',ghi_chu:who+': '+trans,nguoi_gui:window.__TKS_ME.id})}); }catch(e){}
+      var ng=uidByName(who) || window.__TKS_ME.id || null;
+      try{ await fetch(SBU+'/rest/v1/tin_hieu',{method:'POST',headers:hdr(tk,{Prefer:'return=minimal'}),body:JSON.stringify({doi_tuong:'donhang',doi_tuong_id:String(oid),hanh_dong:'doi_khoi',ghi_chu:who+': '+trans,nguoi_gui:ng})}); }catch(e){}
       if(window.renderOrders) renderOrders(window.__TKS_DONHANG);
       toast('Đã chuyển sang "'+lblOf(to)+'"',true);
     }catch(e){ selEl.disabled=false; selEl.value=from; toast('Không đổi được khối: '+e.message); }
