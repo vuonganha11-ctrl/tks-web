@@ -925,7 +925,7 @@ function renderAll(d) {
       var who=operatorName();
       var trans=lblOf(from)+' → '+lblOf(to);
       window.__TKS_NOTES[oid]=noteStr(who, new Date().toISOString(), trans);
-      var ng=uidByName(who) || window.__TKS_ME.id || null;
+      var ng=window.__TKS_ME.id || null;
       try{ await fetch(SBU+'/rest/v1/tin_hieu',{method:'POST',headers:hdr(tk,{Prefer:'return=minimal'}),body:JSON.stringify({doi_tuong:'donhang',doi_tuong_id:String(oid),hanh_dong:'doi_khoi',ghi_chu:who+': '+trans,nguoi_gui:ng})}); }catch(e){}
       if(window.renderOrders) renderOrders(window.__TKS_DONHANG);
       toast('Đã chuyển sang "'+lblOf(to)+'"',true);
