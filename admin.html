@@ -71,7 +71,7 @@ const TABLES = {
   lichcongtac:{label:'Lịch công tác', pk:'id', order:'id', cols:[
     {k:'cot',w:60},{k:'dt',w:90},{k:'descr'},{k:'task_id',w:80},{k:'ppl',w:160},{k:'today',t:'num',w:55}]},
   donhang:    {label:'Đơn hàng', pk:'order_id', order:'order_id', cols:[
-    {k:'order_id',t:'num',w:80},{k:'kh'},{k:'kh_sub'},{k:'task_id',w:80},{k:'giai_doan',w:120},{k:'tien_do',w:70},{k:'han_congno'},{k:'uu_tien',w:64},{k:'san_xuat',w:80},{k:'dich_vu',w:64},{k:'cham_giao',w:74}]},
+    {k:'order_id',t:'num',w:80},{k:'kh'},{k:'kh_sub'},{k:'task_id',w:80},{k:'giai_doan',w:120},{k:'tien_do',w:70},{k:'han_congno'}]},
   meta:       {label:'Meta', pk:'key', order:'key', cols:[{k:'key',w:140},{k:'value'}]},
 };
 const ROLES = ['admin','truong_phong','dieu_phoi','ky_thuat'];
@@ -247,7 +247,11 @@ async function renderAccounts(){
      <div class="card"><h3 class="sec">Ma trận phân quyền (vai trò × khối × hành động)</h3>
      <div class="row" style="margin-bottom:8px"><button class="sm" onclick="renderAccounts()">↻ Tải lại</button>
      <button class="sm pri" onclick="addPerm()">+ Thêm quyền</button></div>
-     <div class="tbl-wrap"><table id="tp"></table></div></div>`;
+     <div class="tbl-wrap"><table id="tp"></table></div></div>
+     <div class="card"><h3 class="sec">Đăng nhập Dashboard (hệ login.html · Sheet "Users")</h3>
+     <div class="row" style="margin-bottom:8px"><button class="sm" onclick="renderAccounts()">↻ Tải lại</button>
+     <span class="hint" style="margin:0">Lượt đăng nhập trang dashboard — KHÁC tài khoản admin Supabase ở trên.</span></div>
+     <div class="tbl-wrap"><table id="tdl"></table></div></div>`;
   $('#na_btn').onclick = addAccount;
   const { data:us } = await sb.from('nguoi_dung').select('*').order('vai_tro');
   $('#tu').innerHTML = '<tr><th>email</th><th>họ tên</th><th>chức năng</th><th style="width:140px">vai trò</th><th style="width:90px">getfly_uid</th><th style="width:70px">active</th><th style="width:150px">hoạt động gần nhất</th><th style="width:80px">—</th></tr>'
@@ -266,6 +270,11 @@ async function renderAccounts(){
         <td>${esc(p.vai_tro)}</td><td>${esc(p.resource)}</td><td>${esc(p.action)}</td>
         <td><input type="checkbox" data-k="cho_phep" ${p.cho_phep?'checked':''}></td>
         <td><button class="sm pri" onclick="savePerm(this)">Lưu</button></td></tr>`).join('');
+  const { data:dl } = await sb.from('dashboard_login').select('*').order('lan_cuoi',{ascending:false});
+  $('#tdl').innerHTML = '<tr><th>tài khoản</th><th>họ tên</th><th style="width:170px">đăng nhập gần nhất</th><th style="width:90px">số lần</th></tr>'
+    + (dl||[]).map(x=>`<tr><td>${esc(x.tai_khoan)}</td><td>${esc(x.ho_ten||'')}</td>
+        <td class="muted">${fmtTime(x.lan_cuoi)}</td><td>${esc(x.so_lan==null?'':x.so_lan)}</td></tr>`).join('')
+    + ((dl||[]).length?'':'<tr><td colspan="4" class="muted">Chưa có lượt đăng nhập dashboard nào được ghi nhận.</td></tr>');
 }
 window.addAccount = async ()=>{
   const email=$('#na_email').value.trim(), pw=$('#na_pw').value;

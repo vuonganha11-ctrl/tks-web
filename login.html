@@ -25,7 +25,10 @@ label{display:block;font-size:11px;font-weight:700;text-transform:uppercase;lett
 <div class="footer-note">THAI KHUONG SERVICE &middot; Nội bộ</div></div>
 <script src="config.js"></script><script>
 var SK='tks_auth_v1',SID=window.TKS_SHEET_ID||'';
-(function(){try{var u=JSON.parse(localStorage.getItem(SK)||'null');if(u&&u.tai_khoan){var f=new URLSearchParams(location.search).get('from');location.replace(f?decodeURIComponent(f):'index.html');}}catch(e){}})();
+var SB_URL='https://yncksjmovgfsyvhkztgw.supabase.co';
+var SB_ANON='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InluY2tzam1vdmdmc3l2aGt6dGd3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEyNDk1NjIsImV4cCI6MjA5NjgyNTU2Mn0.y-4DDvM8X2rBRpG0im2qNP-S1c_50IoxCIOVhYN0WpE';
+function logDashboardLogin(tk,hoten){try{fetch(SB_URL+'/rest/v1/rpc/ghi_dn_dashboard',{method:'POST',keepalive:true,headers:{apikey:SB_ANON,Authorization:'Bearer '+SB_ANON,'Content-Type':'application/json'},body:JSON.stringify({_tk:tk,_hoten:hoten||null})}).catch(function(){});}catch(e){}}
+(function(){try{var u=JSON.parse(sessionStorage.getItem(SK)||'null');if(u&&u.tai_khoan){var f=new URLSearchParams(location.search).get('from');location.replace(f?decodeURIComponent(f):'index.html');}}catch(e){}})();
 var btn=document.getElementById('btnLogin'),msgEl=document.getElementById('msg'),tcEl=document.getElementById('tc'),mpEl=document.getElementById('mp');
 function showMsg(t,tp){msgEl.textContent=t;msgEl.className='msg '+(tp||'err');}
 function isActive(u){if(u.active==null||u.active==='')return true;var v=String(u.active).toLowerCase();return v==='true'||v==='1'||u.active===true;}
@@ -37,7 +40,9 @@ try{if(!SID){showMsg('Chưa cấu hình Sheet ID.');return;}var users=await fetc
 var matched=users.find(function(u){return String(u.tai_khoan||'').trim().toLowerCase()===tc&&String(u.mat_khau||'').trim()===mp;});
 if(!matched){showMsg('Tài khoản hoặc mật khẩu không đúng.');return;}
 if(!isActive(matched)){showMsg('Tài khoản bị vô hiệu hóa.');return;}
-localStorage.setItem(SK,JSON.stringify({tai_khoan:String(matched.tai_khoan).trim(),ho_ten:String(matched.ho_ten||matched.tai_khoan||'').trim(),logged_at:Date.now()}));
+var tk=String(matched.tai_khoan).trim(),ht=String(matched.ho_ten||matched.tai_khoan||'').trim();
+sessionStorage.setItem(SK,JSON.stringify({tai_khoan:tk,ho_ten:ht,logged_at:Date.now()}));
+logDashboardLogin(tk,ht);
 showMsg('Đăng nhập thành công! Đang chuyển trang...','ok');btn.innerHTML='Đăng nhập';
 setTimeout(function(){var f=new URLSearchParams(location.search).get('from');location.replace(f?decodeURIComponent(f):'index.html');},500);
 }catch(e){showMsg(e.message==='no_sheet_id'?'Chưa cấu hình Sheet ID.':'Không đọc được tài khoản.');btn.disabled=false;btn.innerHTML='Đăng nhập';}}
