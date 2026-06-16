@@ -860,7 +860,6 @@ function renderAll(d) {
 (function(){
   var Q=String.fromCharCode(63), AMP=String.fromCharCode(38);
   var SBU=null, SBK=null, READY=false;
-  var LBL={proc:'Đang xử lý',uu_tien:'Ưu tiên',dich_vu:'Dịch vụ TKS',cham_giao:'Chậm giao'};
   var KEY='sb-'+'yncksjmovgfsyvhkztgw'+'-auth-token';
   window.__TKS_NOTES=window.__TKS_NOTES||{};
   window.__TKS_USERS=window.__TKS_USERS||{};
@@ -871,7 +870,10 @@ function renderAll(d) {
   var U=S&&S.user;
   window.__TKS_ME={id:U&&U.id, ten:(U&&U.email)||''};
   function flg(v){ v=String(v==null?'':v).trim().toLowerCase(); return v!==''&&v!=='0'&&v!=='false'&&v!=='no'&&v!=='không'&&v!=='khong'; }
-  function blkOf(r){ return flg(r.uu_tien)?'uu_tien':flg(r.dich_vu)?'dich_vu':flg(r.cham_giao)?'cham_giao':'proc'; }
+  function opts(){ var sel=document.querySelector('select.khoi-sel'); if(!sel) return []; var o=[]; for(var i=0;i<sel.options.length;i++){ o.push({v:sel.options[i].value, l:sel.options[i].textContent}); } return o; }
+  function lblOf(v){ var o=opts(); for(var i=0;i<o.length;i++){ if(o[i].v===v) return o[i].l; } return v; }
+  function flagKeys(){ return opts().map(function(x){return x.v;}).filter(function(v){return v!=='proc';}); }
+  function blkOf(r){ var ks=flagKeys(); for(var i=0;i<ks.length;i++){ if(flg(r[ks[i]])) return ks[i]; } return 'proc'; }
   function p2(n){ return (n<10?'0':'')+n; }
   function fmtT(iso){ try{ var d=new Date(iso); if(isNaN(d.getTime())) return ''; return p2(d.getDate())+'/'+p2(d.getMonth()+1)+' '+p2(d.getHours())+':'+p2(d.getMinutes()); }catch(e){ return ''; } }
   function transOf(g){ g=String(g||''); var i=g.indexOf(': '); return i>=0? g.slice(i+2): g; }
@@ -908,20 +910,21 @@ function renderAll(d) {
     var to=selEl.value; var rows=window.__TKS_DONHANG||[]; var r=null;
     for(var i=0;i<rows.length;i++){ if(String(rows[i].order_id)===String(oid)){ r=rows[i]; break; } }
     if(!r) return; var from=blkOf(r); if(from===to) return;
+    var ks=flagKeys(); if(!ks.length){ toast('Không đọc được danh sách khối.'); return; }
     selEl.disabled=true;
     try{
       var tk=await ensureToken();
       if(!tk){ throw new Error('Phiên đăng nhập đã hết hạn — mở lại trang Quản trị để đăng nhập.'); }
-      var body={uu_tien:to==='uu_tien'?1:null, dich_vu:to==='dich_vu'?1:null, cham_giao:to==='cham_giao'?1:null};
+      var body={}; for(var i=0;i<ks.length;i++){ body[ks[i]] = (to===ks[i])?1:null; }
       var res=await fetch(SBU+'/rest/v1/donhang'+Q+'order_id=eq.'+encodeURIComponent(oid),{method:'PATCH',headers:hdr(tk,{Prefer:'return=minimal'}),body:JSON.stringify(body)});
       if(!res.ok){ var tx=await res.text(); throw new Error('HTTP '+res.status+(tx?(' '+tx.slice(0,140)):'')); }
-      r.uu_tien=body.uu_tien; r.dich_vu=body.dich_vu; r.cham_giao=body.cham_giao;
+      for(var i=0;i<ks.length;i++){ r[ks[i]]=body[ks[i]]; }
       var who=(window.__TKS_ME.id && window.__TKS_USERS[window.__TKS_ME.id]) || window.__TKS_ME.ten || '?';
-      var trans=LBL[from]+' → '+LBL[to];
+      var trans=lblOf(from)+' → '+lblOf(to);
       window.__TKS_NOTES[oid]=noteStr(who, new Date().toISOString(), trans);
       try{ await fetch(SBU+'/rest/v1/tin_hieu',{method:'POST',headers:hdr(tk,{Prefer:'return=minimal'}),body:JSON.stringify({doi_tuong:'donhang',doi_tuong_id:String(oid),hanh_dong:'doi_khoi',ghi_chu:who+': '+trans,nguoi_gui:window.__TKS_ME.id})}); }catch(e){}
       if(window.renderOrders) renderOrders(window.__TKS_DONHANG);
-      toast('Đã chuyển sang "'+LBL[to]+'"',true);
+      toast('Đã chuyển sang "'+lblOf(to)+'"',true);
     }catch(e){ selEl.disabled=false; selEl.value=from; toast('Không đổi được khối: '+e.message); }
   }
   document.addEventListener('change', function(e){ var t=e.target; if(t&&t.classList&&t.classList.contains('khoi-sel')){ tksMove(t.getAttribute('data-oid'), t); } });
