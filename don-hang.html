@@ -285,11 +285,11 @@ function rTree(info, rows){
   const parent=`<div class="tnode tparent">🗂 ${info.order_id?'DH'+esc(info.order_id):''} ${info.kh?'| '+esc(info.kh):''} — Task tổng${info.task_tong?` · <a href="https://thaikhuong.getflycrm.com/#tasks/?task_id=${esc(info.task_tong)}" target="_blank">#${esc(info.task_tong)}</a>`:''}</div>`;
   const kids = rows.length ? rows.map(r=>{
     const k=kind(r), pct=Number(String(r.pct).replace(/[^\d.]/g,''))||0;
-    const bcol=k==='done'?'var(--green)':k==='doing'?'var(--amber)':'#c2cdda';
-    return `<div class="tnode tchild ${lvl(r)}"><span class="tico ${ico[k]}">${mk[k]}</span>${r.task_id?`<a class="tid-link" href="https://thaikhuong.getflycrm.com/#tasks/?task_id=${esc(r.task_id)}" target="_blank">#${esc(r.task_id)}</a>`:''}<span class="tname">${esc(r.ten)}</span><span class="tstat ${sc[k]}">${sn[k]}</span><span class="tbar"><i style="width:${pct}%;background:${bcol}"></i></span></div>`;
+    const bcol=k==='done'?'var(--green)':k==='doing'?'var(--amber)':'#c2cdda';var __mi=[];if(r.nguoi_giao)__mi.push('<span class="tm-i" title="Người giao việc">📤 '+esc(r.nguoi_giao)+'</span>');if(r.nguoi_lam)__mi.push('<span class="tm-i" title="Người thực hiện">👤 '+esc(r.nguoi_lam)+'</span>');if(r.deadline)__mi.push('<span class="tm-i tm-dl" title="Deadline">📅 '+esc(r.deadline)+'</span>');var metaLine=__mi.length?'<div class="tmeta">'+__mi.join('')+'</div>':'';
+    return `<div class="tnode tchild ${lvl(r)}"><span class="tico ${ico[k]}">${mk[k]}</span>${r.task_id?`<a class="tid-link" href="https://thaikhuong.getflycrm.com/#tasks/?task_id=${esc(r.task_id)}" target="_blank">#${esc(r.task_id)}</a>`:''}<div class="tmain"><span class="tname">${esc(r.ten)}</span>${metaLine}</div><span class="tstat ${sc[k]}">${sn[k]}</span><span class="tbar"><i style="width:${pct}%;background:${bcol}"></i></span></div>`;
   }).join('') : '';
   const cap = rows.length ? '' : `<div class="viec-cap">Đơn này chưa có việc con trên CRM. Khi tạo việc con (có ID Task), chúng sẽ hiển thị ở đây.</div>`;
-  return `<section><div class="sec-h"><span class="no">☑</span><h2>Việc đang làm</h2><span class="line"></span></div>${cap}<div class="tree">${parent}${kids}</div></section>`;
+  return `<section><div class="sec-h"><style>.tmain{flex:1;min-width:0}.tmain .tname{display:block}.tmeta{display:flex;flex-wrap:wrap;gap:6px;margin-top:5px}.tm-i{font-size:11px;color:var(--steel);background:var(--ice2);border:1px solid var(--line);border-radius:6px;padding:1px 8px;font-weight:600;white-space:nowrap;line-height:1.7}.tm-dl{color:#9a5b00;background:var(--amber-soft);border-color:#e7cf98}</style><span class="no">☑</span><h2>Việc đang làm</h2><span class="line"></span></div>${cap}<div class="tree">${parent}${kids}</div></section>`;
 }
 function rTodo(rows){
   if(!rows.length) return '';
