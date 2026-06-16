@@ -348,6 +348,20 @@ a.pstat .l{color:var(--steel)}
     </div>
   </section>
 
+  <!-- ĐƠN HÀNG: ĐANG SẢN XUẤT - LẮP ĐẶT -->
+  <section>
+    <div class="sec-h"><span class="no" style="background:#5b4b8a">&#128295;</span><h2>Công việc — Đang sản xuất · Lắp đặt tại xưởng</h2><span class="cnt" id="ordersCntSanxuat"></span><span class="line"></span></div>
+    <div class="card scrollx">
+      <table>
+        <thead><tr>
+          <th>Đơn hàng / Khách hàng</th><th style="width:96px">Task tổng</th><th style="width:150px">Giai đoạn</th>
+          <th style="width:140px">Tiến độ</th><th style="width:170px">Hạn / Công nợ</th><th style="width:130px">Cập nhật</th><th style="width:210px"></th>
+        </tr></thead>
+        <tbody id="ordersBodySanxuat"></tbody>
+      </table>
+    </div>
+  </section>
+
   <!-- ĐƠN HÀNG: DỊCH VỤ TKS -->
   <section>
     <div class="sec-h"><span class="no" style="background:var(--green)">&#128736;</span><h2>Công việc — Dịch vụ TKS</h2><span class="cnt" id="ordersCntService"></span><span class="line"></span></div>
@@ -550,12 +564,13 @@ function renderOrders(rows) {
   window.__TKS_DONHANG = rows;
   function flag(v){ v = String(v == null ? "" : v).trim().toLowerCase(); return v !== "" && v !== "0" && v !== "false" && v !== "no" && v !== "không" && v !== "khong"; }
   function isPri(r){ return flag(r && r.uu_tien); }
+  function isSx(r){ return flag(r && r.san_xuat); }
   function isSvc(r){ return flag(r && r.dich_vu); }
   function isLate(r){ return flag(r && r.cham_giao); }
   function rowHtml(r) {
     var pct = Math.max(0, Math.min(100, num(r.tien_do)));
-    var _blk = isPri(r) ? 'uu_tien' : isSvc(r) ? 'dich_vu' : isLate(r) ? 'cham_giao' : 'proc';
-    var _opts = [['proc','Đang xử lý'],['uu_tien','Ưu tiên'],['dich_vu','Dịch vụ TKS'],['cham_giao','Chậm giao']];
+    var _blk = isPri(r) ? 'uu_tien' : isSx(r) ? 'san_xuat' : isSvc(r) ? 'dich_vu' : isLate(r) ? 'cham_giao' : 'proc';
+    var _opts = [['proc','Đang xử lý'],['uu_tien','Ưu tiên'],['san_xuat','Đang SX · Lắp đặt'],['dich_vu','Dịch vụ TKS'],['cham_giao','Chậm giao']];
     var _sel = window.__TKS_CAN_EDIT ? ('<select class="khoi-sel" data-oid="' + esc(r.order_id) + '" title="Đổi khối hiển thị trên dashboard">' + _opts.map(function(o){ return '<option value="' + o[0] + '"' + (o[0] === _blk ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') + '</select>') : '';
     var _note = (window.__TKS_NOTES && window.__TKS_NOTES[r.order_id]) ? ('<div class="khoi-note">↪ ' + esc(window.__TKS_NOTES[r.order_id]) + '</div>') : '';
     var bar = pct >= 100 ? "green" : "steel";
@@ -573,13 +588,16 @@ function renderOrders(rows) {
       "</tr>";
   }
   var pri = rows.filter(isPri);
-  var svc = rows.filter(function(r){ return !isPri(r) && isSvc(r); });
-  var late = rows.filter(function(r){ return !isPri(r) && !isSvc(r) && isLate(r); });
-  var proc = rows.filter(function(r){ return !isPri(r) && !isSvc(r) && !isLate(r); });
+  var sx = rows.filter(function(r){ return !isPri(r) && isSx(r); });
+  var svc = rows.filter(function(r){ return !isPri(r) && !isSx(r) && isSvc(r); });
+  var late = rows.filter(function(r){ return !isPri(r) && !isSx(r) && !isSvc(r) && isLate(r); });
+  var proc = rows.filter(function(r){ return !isPri(r) && !isSx(r) && !isSvc(r) && !isLate(r); });
   $("ordersCntPriority").textContent = pri.length + " đơn";
+  $("ordersCntSanxuat").textContent = sx.length + " đơn";
   $("ordersCntService").textContent = svc.length + " đơn";
   $("ordersCntProcessing").textContent = proc.length + " đơn";
   $("ordersBodyPriority").innerHTML = pri.length ? pri.map(rowHtml).join("") : '<tr><td colspan="7" style="color:var(--grey);text-align:center;padding:16px">Chưa có đơn ưu tiên — đánh dấu cột uu_tien trong tab DonHang.</td></tr>';
+  $("ordersBodySanxuat").innerHTML = sx.length ? sx.map(rowHtml).join("") : '<tr><td colspan="7" style="color:var(--grey);text-align:center;padding:16px">Chưa có đơn đang sản xuất / lắp đặt — đánh dấu cột san_xuat trong tab DonHang.</td></tr>';
   $("ordersBodyService").innerHTML = svc.length ? svc.map(rowHtml).join("") : '<tr><td colspan="7" style="color:var(--grey);text-align:center;padding:16px">Chưa có đơn dịch vụ — đánh dấu cột dich_vu trong tab DonHang.</td></tr>';
   $("ordersBodyProcessing").innerHTML = proc.map(rowHtml).join("");
   $("ordersCntLate").textContent = late.length + " đơn";
@@ -842,7 +860,7 @@ function renderAll(d) {
 (function(){
   var Q=String.fromCharCode(63), AMP=String.fromCharCode(38);
   var SBU=null, SBK=null, READY=false;
-  var LBL={proc:'Đang xử lý',uu_tien:'Ưu tiên',dich_vu:'Dịch vụ TKS',cham_giao:'Chậm giao'};
+  var LBL={proc:'Đang xử lý',uu_tien:'Ưu tiên',dich_vu:'Dịch vụ TKS',cham_giao:'Chậm giao',san_xuat:'Đang SX · Lắp đặt'};
   var KEY='sb-'+'yncksjmovgfsyvhkztgw'+'-auth-token';
   window.__TKS_NOTES=window.__TKS_NOTES||{};
   function rawSess(){ try{ var raw=localStorage.getItem(KEY); if(!raw) return null; var j=JSON.parse(raw); return (j&&(j.access_token||j.refresh_token))?j:null; }catch(e){ return null; } }
@@ -852,7 +870,7 @@ function renderAll(d) {
   var U=S&&S.user;
   window.__TKS_ME={id:U&&U.id, ten:(U&&U.email)||''};
   function flg(v){ v=String(v==null?'':v).trim().toLowerCase(); return v!==''&&v!=='0'&&v!=='false'&&v!=='no'&&v!=='không'&&v!=='khong'; }
-  function blkOf(r){ return flg(r.uu_tien)?'uu_tien':flg(r.dich_vu)?'dich_vu':flg(r.cham_giao)?'cham_giao':'proc'; }
+  function blkOf(r){ return flg(r.uu_tien)?'uu_tien':flg(r.san_xuat)?'san_xuat':flg(r.dich_vu)?'dich_vu':flg(r.cham_giao)?'cham_giao':'proc'; }
   function toast(m,ok){ var d=document.createElement('div'); d.textContent=m; d.style.cssText='position:fixed;right:18px;bottom:18px;z-index:9999;max-width:340px;background:'+(ok?'#2f7d4f':'#c0392b')+';color:#fff;padding:10px 15px;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.25);font:600 13px/1.4 IBM Plex Sans,sans-serif'; document.body.appendChild(d); setTimeout(function(){ d.remove(); },4200); }
   async function ensureToken(){
     var j=rawSess(); if(!j) return null;
@@ -886,10 +904,10 @@ function renderAll(d) {
     try{
       var tk=await ensureToken();
       if(!tk){ throw new Error('Phiên đăng nhập đã hết hạn — mở lại trang Quản trị để đăng nhập.'); }
-      var body={uu_tien:to==='uu_tien'?1:null, dich_vu:to==='dich_vu'?1:null, cham_giao:to==='cham_giao'?1:null};
+      var body={uu_tien:to==='uu_tien'?1:null, san_xuat:to==='san_xuat'?1:null, dich_vu:to==='dich_vu'?1:null, cham_giao:to==='cham_giao'?1:null};
       var res=await fetch(SBU+'/rest/v1/donhang'+Q+'order_id=eq.'+encodeURIComponent(oid),{method:'PATCH',headers:hdr(tk,{Prefer:'return=minimal'}),body:JSON.stringify(body)});
       if(!res.ok){ var tx=await res.text(); throw new Error('HTTP '+res.status+(tx?(' '+tx.slice(0,140)):'')); }
-      r.uu_tien=body.uu_tien; r.dich_vu=body.dich_vu; r.cham_giao=body.cham_giao;
+      r.uu_tien=body.uu_tien; r.san_xuat=body.san_xuat; r.dich_vu=body.dich_vu; r.cham_giao=body.cham_giao;
       var note=(window.__TKS_ME.ten||'?')+': '+LBL[from]+' → '+LBL[to];
       window.__TKS_NOTES[oid]=note;
       try{ await fetch(SBU+'/rest/v1/tin_hieu',{method:'POST',headers:hdr(tk,{Prefer:'return=minimal'}),body:JSON.stringify({doi_tuong:'donhang',doi_tuong_id:String(oid),hanh_dong:'doi_khoi',ghi_chu:note,nguoi_gui:window.__TKS_ME.id})}); }catch(e){}
