@@ -112,24 +112,24 @@ function renderLogin(){
   <div class="center"><div class="login">
     <h2>TKS Admin</h2>
     <div class="muted" style="font-size:12px">Đăng nhập để quản trị dữ liệu dashboard.</div>
-    <label>Email</label><input class="f" id="em" type="email" placeholder="vuonganha11@gmail.com">
+    <label>Tài khoản</label><input class="f" id="em" type="text" placeholder="tên đăng nhập (hoặc email)">
     <label>Mật khẩu</label><input class="f" id="pw" type="password" placeholder="••••••••">
     <div class="row" style="margin-top:16px">
       <button class="pri" id="bLogin">Đăng nhập</button>
-      <button id="bSignup">Đăng ký</button>
     </div>
-    <div class="hint">Lần đầu: bấm <b>Đăng ký</b> bằng email của bạn. Email <b>vuonganha11@gmail.com</b> sẽ tự là quản trị (admin).</div>
+    <div class="hint">Đăng nhập bằng <b>tên đăng nhập</b> (không cần email). Tài khoản do quản trị tạo trong trang quản trị.</div>
   </div></div>`;
+  async function resolveEmail(id){
+    if(id.includes('@')) return id;
+    const { data } = await sb.rpc('resolve_login_email',{_id:id});
+    return data || null;
+  }
   $('#bLogin').onclick = async ()=>{
-    const { error } = await sb.auth.signInWithPassword({ email:$('#em').value.trim(), password:$('#pw').value });
+    const id=$('#em').value.trim(); if(!id) return toast('Nhập tài khoản','err');
+    const email = await resolveEmail(id);
+    if(!email) return toast('Không tìm thấy tài khoản này','err');
+    const { error } = await sb.auth.signInWithPassword({ email, password:$('#pw').value });
     if(error) return toast(error.message,'err'); init();
-  };
-  $('#bSignup').onclick = async ()=>{
-    const { error } = await sb.auth.signUp({ email:$('#em').value.trim(), password:$('#pw').value });
-    if(error) return toast(error.message,'err');
-    toast('Đã đăng ký. Đang đăng nhập...','ok');
-    await sb.auth.signInWithPassword({ email:$('#em').value.trim(), password:$('#pw').value });
-    init();
   };
 }
 
@@ -230,9 +230,10 @@ window.delRow = async (name, btn)=>{
 // ====================== TÀI KHOẢN & PHÂN QUYỀN ======================
 async function renderAccounts(){
   $('#main').innerHTML = `<div class="card"><h3 class="sec">Thêm tài khoản mới</h3>
-     <div class="hint">Tạo tài khoản đăng nhập (email + mật khẩu) và gán vai trò ngay. Phiên đăng nhập của bạn KHÔNG bị ảnh hưởng. Người dùng có thể tự đổi mật khẩu sau.</div>
+     <div class="hint">Tạo tài khoản đăng nhập bằng <b>tên đăng nhập</b> + mật khẩu (email không bắt buộc). Phiên đăng nhập của bạn KHÔNG bị ảnh hưởng.</div>
      <div class="row">
-       <input class="f" id="na_email" type="email" placeholder="email *" style="max-width:200px">
+       <input class="f" id="na_un" placeholder="tên đăng nhập *" style="max-width:150px">
+       <input class="f" id="na_email" type="text" placeholder="email (tuỳ chọn)" style="max-width:180px">
        <input class="f" id="na_pw" type="text" placeholder="mật khẩu * (≥6)" style="max-width:150px">
        <input class="f" id="na_hoten" placeholder="họ tên" style="max-width:160px">
        <input class="f" id="na_cn" placeholder="chức năng" style="max-width:150px">
@@ -264,9 +265,10 @@ async function renderAccounts(){
   $('#na_btn').onclick = addAccount;
   $('#du_add').onclick = addDashUser;
   const { data:us } = await sb.from('nguoi_dung').select('*').order('vai_tro');
-  $('#tu').innerHTML = '<tr><th>email</th><th>họ tên</th><th>chức năng</th><th style="width:140px">vai trò</th><th style="width:90px">getfly_uid</th><th style="width:70px">active</th><th style="width:150px">hoạt động gần nhất</th><th style="width:170px">—</th></tr>'
+  $('#tu').innerHTML = '<tr><th style="width:120px">tên ĐN</th><th>email</th><th>họ tên</th><th>chức năng</th><th style="width:130px">vai trò</th><th style="width:80px">getfly_uid</th><th style="width:65px">active</th><th style="width:140px">hoạt động gần nhất</th><th style="width:170px">—</th></tr>'
     + (us||[]).map(u=>`<tr data-id="${u.id}">
-        <td>${esc(u.email)}</td>
+        <td><input data-k="username" value="${esc(u.username||'')}"></td>
+        <td class="muted" style="font-size:11px">${esc(u.email)}</td>
         <td><input data-k="ho_ten" value="${esc(u.ho_ten||'')}"></td>
         <td><input data-k="chuc_nang" value="${esc(u.chuc_nang||'')}"></td>
         <td><select data-k="vai_tro">${ROLES.map(r=>`<option ${u.vai_tro===r?'selected':''}>${r}</option>`).join('')}</select></td>
@@ -298,18 +300,19 @@ async function renderAccounts(){
     + ((du||[]).length?'':'<tr><td colspan="4" class="muted">Chưa có tài khoản dashboard.</td></tr>');
 }
 window.addAccount = async ()=>{
-  const email=$('#na_email').value.trim(), pw=$('#na_pw').value;
-  if(!email||!pw) return toast('Cần email và mật khẩu','err');
+  const un=$('#na_un').value.trim(); let email=$('#na_email').value.trim(); const pw=$('#na_pw').value;
+  if(!un && !email) return toast('Cần tên đăng nhập','err');
+  if(!pw) return toast('Cần mật khẩu','err');
   if(pw.length<6) return toast('Mật khẩu tối thiểu 6 ký tự','err');
+  if(!email) email = un.toLowerCase().replace(/[^a-z0-9._-]/g,'') + '@tks.local';  // email nội bộ ẩn cho Supabase Auth
   const btn=$('#na_btn'); btn.disabled=true;
   // Client phụ: signUp tạo auth user mới mà KHÔNG ghi đè phiên admin (persistSession:false)
   const tmp = supabase.createClient(SB_URL, SB_ANON, {auth:{storageKey:'tks_tmp_signup',persistSession:false,autoRefreshToken:false}});
   const { data, error } = await tmp.auth.signUp({ email, password:pw });
   if(error){ btn.disabled=false; return toast(error.message,'err'); }
   const uid = data.user && data.user.id;
-  if(!uid){ btn.disabled=false; return toast('Đã gửi yêu cầu nhưng chưa lấy được ID (có thể cần xác nhận email trước).','err'); }
-  // Ghi hồ sơ qua phiên admin (có quyền tai_khoan/config). upsert: trigger tạo sẵn row → update, chưa có → insert.
-  const prof={ id:uid, email,
+  if(!uid){ btn.disabled=false; return toast('Đã gửi yêu cầu nhưng chưa lấy được ID.','err'); }
+  const prof={ id:uid, email, username: un||null,
     ho_ten:$('#na_hoten').value.trim()||null,
     chuc_nang:$('#na_cn').value.trim()||null,
     vai_tro:$('#na_vaitro').value,
@@ -318,7 +321,7 @@ window.addAccount = async ()=>{
   const { error:e2 } = await sb.from('nguoi_dung').upsert(prof);
   btn.disabled=false;
   if(e2) return toast('Tạo đăng nhập OK nhưng lưu hồ sơ lỗi: '+e2.message,'err');
-  toast('Đã tạo tài khoản '+email,'ok'); renderAccounts();
+  toast('Đã tạo tài khoản '+(un||email),'ok'); renderAccounts();
 };
 window.resetUserPw = async (id, email)=>{
   const pw = prompt('Mật khẩu MỚI cho '+email+' (≥6 ký tự):');
@@ -355,7 +358,7 @@ window.delDashUser = async (tk)=>{
 };
 window.saveUser = async (id, btn)=>{
   const tr=btn.closest('tr'); const o={};
-  tr.querySelectorAll('[data-k]').forEach(i=>{ let v=i.value; if(i.dataset.k==='getfly_uid') v=v===''?null:Number(v); if(i.dataset.k==='active') v=(v==='true'||v===true); o[i.dataset.k]=v; });
+  tr.querySelectorAll('[data-k]').forEach(i=>{ let v=i.value; if(i.dataset.k==='getfly_uid') v=v===''?null:Number(v); else if(i.dataset.k==='active') v=(v==='true'||v===true); else if(i.dataset.k==='username') v=v.trim()===''?null:v.trim(); o[i.dataset.k]=v; });
   const { error } = await sb.from('nguoi_dung').update(o).eq('id',id);
   if(error) return toast(error.message,'err'); toast('Đã lưu tài khoản','ok');
 };
