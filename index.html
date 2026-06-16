@@ -860,9 +860,10 @@ function renderAll(d) {
 (function(){
   var Q=String.fromCharCode(63), AMP=String.fromCharCode(38);
   var SBU=null, SBK=null, READY=false;
-  var LBL={proc:'Đang xử lý',uu_tien:'Ưu tiên',dich_vu:'Dịch vụ TKS',cham_giao:'Chậm giao',san_xuat:'Đang SX · Lắp đặt'};
+  var LBL={proc:'Đang xử lý',uu_tien:'Ưu tiên',dich_vu:'Dịch vụ TKS',cham_giao:'Chậm giao'};
   var KEY='sb-'+'yncksjmovgfsyvhkztgw'+'-auth-token';
   window.__TKS_NOTES=window.__TKS_NOTES||{};
+  window.__TKS_USERS=window.__TKS_USERS||{};
   function rawSess(){ try{ var raw=localStorage.getItem(KEY); if(!raw) return null; var j=JSON.parse(raw); return (j&&(j.access_token||j.refresh_token))?j:null; }catch(e){ return null; } }
   function storeSess(j){ try{ localStorage.setItem(KEY, JSON.stringify(j)); }catch(e){} }
   var S=rawSess();
@@ -870,7 +871,11 @@ function renderAll(d) {
   var U=S&&S.user;
   window.__TKS_ME={id:U&&U.id, ten:(U&&U.email)||''};
   function flg(v){ v=String(v==null?'':v).trim().toLowerCase(); return v!==''&&v!=='0'&&v!=='false'&&v!=='no'&&v!=='không'&&v!=='khong'; }
-  function blkOf(r){ return flg(r.uu_tien)?'uu_tien':flg(r.san_xuat)?'san_xuat':flg(r.dich_vu)?'dich_vu':flg(r.cham_giao)?'cham_giao':'proc'; }
+  function blkOf(r){ return flg(r.uu_tien)?'uu_tien':flg(r.dich_vu)?'dich_vu':flg(r.cham_giao)?'cham_giao':'proc'; }
+  function p2(n){ return (n<10?'0':'')+n; }
+  function fmtT(iso){ try{ var d=new Date(iso); if(isNaN(d.getTime())) return ''; return p2(d.getDate())+'/'+p2(d.getMonth()+1)+' '+p2(d.getHours())+':'+p2(d.getMinutes()); }catch(e){ return ''; } }
+  function transOf(g){ g=String(g||''); var i=g.indexOf(': '); return i>=0? g.slice(i+2): g; }
+  function noteStr(who, iso, trans){ var t=fmtT(iso); return who + (t?(' · '+t):'') + ': ' + trans; }
   function toast(m,ok){ var d=document.createElement('div'); d.textContent=m; d.style.cssText='position:fixed;right:18px;bottom:18px;z-index:9999;max-width:340px;background:'+(ok?'#2f7d4f':'#c0392b')+';color:#fff;padding:10px 15px;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.25);font:600 13px/1.4 IBM Plex Sans,sans-serif'; document.body.appendChild(d); setTimeout(function(){ d.remove(); },4200); }
   async function ensureToken(){
     var j=rawSess(); if(!j) return null;
@@ -888,12 +893,15 @@ function renderAll(d) {
   creds.then(async function(){
     if(!READY) return;
     var tk=await ensureToken();
-    try{ var url=SBU+'/rest/v1/tin_hieu'+Q+'doi_tuong=eq.donhang'+AMP+'hanh_dong=eq.doi_khoi'+AMP+'order=thoi_gian.desc'+AMP+'select=doi_tuong_id,ghi_chu';
+    try{ var us=await fetch(SBU+'/rest/v1/nguoi_dung'+Q+'select=id,ho_ten,email',{headers:hdr(tk)}).then(function(r){return r.ok?r.json():[];});
+      (us||[]).forEach(function(u){ window.__TKS_USERS[u.id]=u.ho_ten||u.email||''; });
+      if(window.__TKS_ME.id && window.__TKS_USERS[window.__TKS_ME.id]) window.__TKS_ME.ten=window.__TKS_USERS[window.__TKS_ME.id];
+    }catch(e){}
+    try{ var url=SBU+'/rest/v1/tin_hieu'+Q+'doi_tuong=eq.donhang'+AMP+'hanh_dong=eq.doi_khoi'+AMP+'order=thoi_gian.desc'+AMP+'select=doi_tuong_id,ghi_chu,thoi_gian,nguoi_gui';
       var a=await fetch(url,{headers:hdr(tk)}).then(function(r){return r.ok?r.json():[];});
-      (a||[]).forEach(function(x){ if(!window.__TKS_NOTES[x.doi_tuong_id]) window.__TKS_NOTES[x.doi_tuong_id]=x.ghi_chu; });
+      (a||[]).forEach(function(x){ if(window.__TKS_NOTES[x.doi_tuong_id]) return; var who=window.__TKS_USERS[x.nguoi_gui]; if(!who){ var g=String(x.ghi_chu||''); var i=g.indexOf(': '); who=i>=0? g.slice(0,i): '?'; } window.__TKS_NOTES[x.doi_tuong_id]=noteStr(who, x.thoi_gian, transOf(x.ghi_chu)); });
       if(window.__TKS_DONHANG&&window.renderOrders) renderOrders(window.__TKS_DONHANG);
     }catch(e){}
-    if(window.__TKS_ME.id){ try{ var p=await fetch(SBU+'/rest/v1/nguoi_dung'+Q+'id=eq.'+encodeURIComponent(window.__TKS_ME.id)+AMP+'select=ho_ten,email',{headers:hdr(tk)}).then(function(r){return r.ok?r.json():[];}); if(p&&p[0]) window.__TKS_ME.ten=p[0].ho_ten||p[0].email||window.__TKS_ME.ten; }catch(e){} }
   });
   async function tksMove(oid, selEl){
     if(!READY){ toast('Đang tải cấu hình, thử lại sau giây lát.'); return; }
@@ -904,13 +912,14 @@ function renderAll(d) {
     try{
       var tk=await ensureToken();
       if(!tk){ throw new Error('Phiên đăng nhập đã hết hạn — mở lại trang Quản trị để đăng nhập.'); }
-      var body={uu_tien:to==='uu_tien'?1:null, san_xuat:to==='san_xuat'?1:null, dich_vu:to==='dich_vu'?1:null, cham_giao:to==='cham_giao'?1:null};
+      var body={uu_tien:to==='uu_tien'?1:null, dich_vu:to==='dich_vu'?1:null, cham_giao:to==='cham_giao'?1:null};
       var res=await fetch(SBU+'/rest/v1/donhang'+Q+'order_id=eq.'+encodeURIComponent(oid),{method:'PATCH',headers:hdr(tk,{Prefer:'return=minimal'}),body:JSON.stringify(body)});
       if(!res.ok){ var tx=await res.text(); throw new Error('HTTP '+res.status+(tx?(' '+tx.slice(0,140)):'')); }
-      r.uu_tien=body.uu_tien; r.san_xuat=body.san_xuat; r.dich_vu=body.dich_vu; r.cham_giao=body.cham_giao;
-      var note=(window.__TKS_ME.ten||'?')+': '+LBL[from]+' → '+LBL[to];
-      window.__TKS_NOTES[oid]=note;
-      try{ await fetch(SBU+'/rest/v1/tin_hieu',{method:'POST',headers:hdr(tk,{Prefer:'return=minimal'}),body:JSON.stringify({doi_tuong:'donhang',doi_tuong_id:String(oid),hanh_dong:'doi_khoi',ghi_chu:note,nguoi_gui:window.__TKS_ME.id})}); }catch(e){}
+      r.uu_tien=body.uu_tien; r.dich_vu=body.dich_vu; r.cham_giao=body.cham_giao;
+      var who=(window.__TKS_ME.id && window.__TKS_USERS[window.__TKS_ME.id]) || window.__TKS_ME.ten || '?';
+      var trans=LBL[from]+' → '+LBL[to];
+      window.__TKS_NOTES[oid]=noteStr(who, new Date().toISOString(), trans);
+      try{ await fetch(SBU+'/rest/v1/tin_hieu',{method:'POST',headers:hdr(tk,{Prefer:'return=minimal'}),body:JSON.stringify({doi_tuong:'donhang',doi_tuong_id:String(oid),hanh_dong:'doi_khoi',ghi_chu:who+': '+trans,nguoi_gui:window.__TKS_ME.id})}); }catch(e){}
       if(window.renderOrders) renderOrders(window.__TKS_DONHANG);
       toast('Đã chuyển sang "'+LBL[to]+'"',true);
     }catch(e){ selEl.disabled=false; selEl.value=from; toast('Không đổi được khối: '+e.message); }
