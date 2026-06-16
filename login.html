@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Đăng nhập — TKS Dashboard</title>
 <link href="https://fonts.googleapis.com/css2?family=Saira:wght@400;500;600;700&family=Saira+Condensed:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>:root{--navy:#0f2742;--navy2:#173a5e;--steel:#3d6695;--amber:#e08a00;--amber-soft:#fbeccd;--green:#2f7d4f;--green-soft:#e0f0e6;--red:#c0392b;--red-soft:#fbe5e2;--grey:#6b7a8d;--line:#d6dee8;--ink:#16202c;--shadow:0 1px 2px rgba(15,39,66,.06),0 8px 24px rgba(15,39,66,.08);}
 *{box-sizing:border-box;margin:0;padding:0}body{font-family:'IBM Plex Sans',sans-serif;color:var(--ink);min-height:100vh;display:flex;align-items:center;justify-content:center;background:radial-gradient(1200px 500px at 80% -10%,rgba(61,102,149,.10),transparent 60%),linear-gradient(180deg,#eef3f8 0%,#e6edf4 100%);padding:24px;}
 .card{background:#fff;border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow);padding:40px 44px;width:100%;max-width:420px;}
@@ -19,32 +20,38 @@ label{display:block;font-size:11px;font-weight:700;text-transform:uppercase;lett
 <span class="logo-plate"><img src="assets/logo-2.png" alt="TKS" onerror="this.parentElement.textContent='TKS'"></span></div>
 <h1>TKS Dashboard</h1><p>Đăng nhập để tiếp tục</p></div>
 <div class="msg" id="msg"></div>
-<div class="field"><label for="tc">Tài khoản</label><input type="text" id="tc" autocomplete="username" placeholder="Nhập tài khoản..."></div>
+<div class="field"><label for="tc">Tài khoản</label><input type="text" id="tc" autocomplete="username" placeholder="Tên đăng nhập..."></div>
 <div class="field"><label for="mp">Mật khẩu</label><input type="password" id="mp" autocomplete="current-password" placeholder="Nhập mật khẩu..."></div>
 <button class="btn-login" id="btnLogin">Đăng nhập</button>
 <div class="footer-note">THAI KHUONG SERVICE &middot; Nội bộ</div></div>
-<script src="config.js"></script><script>
-var SK='tks_auth_v1',SID=window.TKS_SHEET_ID||'';
+<script>
+var SK='tks_auth_v1';
 var SB_URL='https://yncksjmovgfsyvhkztgw.supabase.co';
 var SB_ANON='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InluY2tzam1vdmdmc3l2aGt6dGd3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEyNDk1NjIsImV4cCI6MjA5NjgyNTU2Mn0.y-4DDvM8X2rBRpG0im2qNP-S1c_50IoxCIOVhYN0WpE';
+// persistSession:false => đăng nhập dashboard KHÔNG tạo phiên admin.html
+var sb = supabase.createClient(SB_URL, SB_ANON, {auth:{persistSession:false,autoRefreshToken:false}});
 function logDashboardLogin(tk,hoten){try{fetch(SB_URL+'/rest/v1/rpc/ghi_dn_dashboard',{method:'POST',keepalive:true,headers:{apikey:SB_ANON,Authorization:'Bearer '+SB_ANON,'Content-Type':'application/json'},body:JSON.stringify({_tk:tk,_hoten:hoten||null})}).catch(function(){});}catch(e){}}
 (function(){try{var u=JSON.parse(sessionStorage.getItem(SK)||'null');if(u&&u.tai_khoan){var f=new URLSearchParams(location.search).get('from');location.replace(f?decodeURIComponent(f):'index.html');}}catch(e){}})();
 var btn=document.getElementById('btnLogin'),msgEl=document.getElementById('msg'),tcEl=document.getElementById('tc'),mpEl=document.getElementById('mp');
 function showMsg(t,tp){msgEl.textContent=t;msgEl.className='msg '+(tp||'err');}
-function isActive(u){if(u.active==null||u.active==='')return true;var v=String(u.active).toLowerCase();return v==='true'||v==='1'||u.active===true;}
-function decodeGviz(raw){var s=raw.indexOf('{'),e=raw.lastIndexOf('}');var j=JSON.parse(raw.substring(s,e+1));var cols=(j.table.cols||[]).map(function(c){return(c.label||c.id||'').trim();});return(j.table.rows||[]).map(function(row){var o={};(row.c||[]).forEach(function(cell,i){o[cols[i]]=cell?(cell.v!=null?cell.v:''):'';});return o;});}
-async function doLogin(){var tc=tcEl.value.trim(),mp=mpEl.value.trim();if(!tc||!mp){showMsg('Vui lòng nhập tài khoản và mật khẩu.');return;}
+async function doLogin(){var id=tcEl.value.trim(),mp=mpEl.value;if(!id||!mp){showMsg('Vui lòng nhập tài khoản và mật khẩu.');return;}
 btn.disabled=true;btn.innerHTML='<span class="spinner"></span>Đang kiểm tra...';msgEl.className='msg';
 try{
-var res=await fetch(SB_URL+'/rest/v1/rpc/dn_dashboard_check',{method:'POST',headers:{apikey:SB_ANON,Authorization:'Bearer '+SB_ANON,'Content-Type':'application/json'},body:JSON.stringify({_tk:tc,_mk:mp})});
-if(!res.ok)throw new Error('HTTP '+res.status);
-var rows=await res.json();
-if(!rows||!rows.length){showMsg('Tài khoản hoặc mật khẩu không đúng (hoặc bị vô hiệu hoá).');btn.disabled=false;btn.innerHTML='Đăng nhập';return;}
-var u=rows[0];var tk=String(u.tai_khoan).trim(),ht=String(u.ho_ten||u.tai_khoan||'').trim();
+var email=id;
+if(id.indexOf('@')<0){var rr=await sb.rpc('resolve_login_email',{_id:id});email=rr.data;}
+if(!email){showMsg('Tài khoản hoặc mật khẩu không đúng (hoặc bị vô hiệu hoá).');btn.disabled=false;btn.innerHTML='Đăng nhập';return;}
+var si=await sb.auth.signInWithPassword({email:email,password:mp});
+if(si.error){showMsg('Tài khoản hoặc mật khẩu không đúng (hoặc bị vô hiệu hoá).');btn.disabled=false;btn.innerHTML='Đăng nhập';return;}
+var uid=si.data.user.id;
+var pr=await sb.from('nguoi_dung').select('username,ho_ten,active').eq('id',uid).maybeSingle();
+var prof=pr.data||{};
+if(prof.active===false){showMsg('Tài khoản đã bị vô hiệu hoá.');await sb.auth.signOut();btn.disabled=false;btn.innerHTML='Đăng nhập';return;}
+var tk=(prof.username||id),ht=(prof.ho_ten||tk);
 sessionStorage.setItem(SK,JSON.stringify({tai_khoan:tk,ho_ten:ht,logged_at:Date.now()}));
+try{await sb.rpc('ghi_hoat_dong');}catch(e){}
 logDashboardLogin(tk,ht);
 showMsg('Đăng nhập thành công! Đang chuyển trang...','ok');btn.innerHTML='Đăng nhập';
-setTimeout(function(){var f=new URLSearchParams(location.search).get('from');location.replace(f?decodeURIComponent(f):'index.html');},500);
+setTimeout(function(){var f=new URLSearchParams(location.search).get('from');location.replace(f?decodeURIComponent(f):'index.html');},400);
 }catch(e){showMsg('Không kết nối được máy chủ. Thử lại.');btn.disabled=false;btn.innerHTML='Đăng nhập';}}
 btn.addEventListener('click',doLogin);[tcEl,mpEl].forEach(function(el){el.addEventListener('keydown',function(e){if(e.key==='Enter')doLogin();});});
 </script></body></html>
