@@ -31,7 +31,7 @@ var SB_ANON='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZi
 // persistSession:false => đăng nhập dashboard KHÔNG tạo phiên admin.html
 var sb = supabase.createClient(SB_URL, SB_ANON, {auth:{persistSession:false,autoRefreshToken:false}});
 function logDashboardLogin(tk,hoten){try{fetch(SB_URL+'/rest/v1/rpc/ghi_dn_dashboard',{method:'POST',keepalive:true,headers:{apikey:SB_ANON,Authorization:'Bearer '+SB_ANON,'Content-Type':'application/json'},body:JSON.stringify({_tk:tk,_hoten:hoten||null})}).catch(function(){});}catch(e){}}
-(function(){try{var u=JSON.parse(sessionStorage.getItem(SK)||'null');if(u&&u.tai_khoan){var f=new URLSearchParams(location.search).get('from');location.replace(f?decodeURIComponent(f):'index.html');}}catch(e){}})();
+(function(){try{var u=JSON.parse(localStorage.getItem(SK)||'null');if(u&&u.tai_khoan){var f=new URLSearchParams(location.search).get('from');location.replace(f?decodeURIComponent(f):'index.html');}}catch(e){}})();
 var btn=document.getElementById('btnLogin'),msgEl=document.getElementById('msg'),tcEl=document.getElementById('tc'),mpEl=document.getElementById('mp');
 function showMsg(t,tp){msgEl.textContent=t;msgEl.className='msg '+(tp||'err');}
 async function doLogin(){var id=tcEl.value.trim(),mp=mpEl.value;if(!id||!mp){showMsg('Vui lòng nhập tài khoản và mật khẩu.');return;}
@@ -47,7 +47,7 @@ var pr=await sb.from('nguoi_dung').select('username,ho_ten,active').eq('id',uid)
 var prof=pr.data||{};
 if(prof.active===false){showMsg('Tài khoản đã bị vô hiệu hoá.');await sb.auth.signOut();btn.disabled=false;btn.innerHTML='Đăng nhập';return;}
 var tk=(prof.username||id),ht=(prof.ho_ten||tk);
-sessionStorage.setItem(SK,JSON.stringify({tai_khoan:tk,ho_ten:ht,logged_at:Date.now()}));
+localStorage.setItem(SK,JSON.stringify({tai_khoan:tk,ho_ten:ht,logged_at:Date.now()}));
 try{await sb.rpc('ghi_hoat_dong');}catch(e){}
 logDashboardLogin(tk,ht);
 showMsg('Đăng nhập thành công! Đang chuyển trang...','ok');btn.innerHTML='Đăng nhập';
