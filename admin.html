@@ -251,10 +251,20 @@ async function renderAccounts(){
      <div class="card"><h3 class="sec">Đăng nhập Dashboard (hệ login.html · Sheet "Users")</h3>
      <div class="row" style="margin-bottom:8px"><button class="sm" onclick="renderAccounts()">↻ Tải lại</button>
      <span class="hint" style="margin:0">Lượt đăng nhập trang dashboard — KHÁC tài khoản admin Supabase ở trên.</span></div>
-     <div class="tbl-wrap"><table id="tdl"></table></div></div>`;
+     <div class="tbl-wrap"><table id="tdl"></table></div></div>
+     <div class="card"><h3 class="sec">Tài khoản đăng nhập Dashboard (login.html)</h3>
+     <div class="hint">Tài khoản để nhân viên đăng nhập trang dashboard (đã chuyển từ Google Sheet sang Supabase; mật khẩu lưu dạng băm). Admin có thể thêm, đổi tên, bật/tắt và <b>đặt lại mật khẩu</b>.</div>
+     <div class="row">
+       <input class="f" id="du_tk" placeholder="tài khoản *" style="max-width:160px">
+       <input class="f" id="du_ht" placeholder="họ tên" style="max-width:180px">
+       <input class="f" id="du_pw" type="text" placeholder="mật khẩu * (≥6)" style="max-width:150px">
+       <button class="pri" id="du_add">+ Thêm</button>
+     </div>
+     <div class="tbl-wrap" style="margin-top:10px"><table id="tdu"></table></div></div>`;
   $('#na_btn').onclick = addAccount;
+  $('#du_add').onclick = addDashUser;
   const { data:us } = await sb.from('nguoi_dung').select('*').order('vai_tro');
-  $('#tu').innerHTML = '<tr><th>email</th><th>họ tên</th><th>chức năng</th><th style="width:140px">vai trò</th><th style="width:90px">getfly_uid</th><th style="width:70px">active</th><th style="width:150px">hoạt động gần nhất</th><th style="width:80px">—</th></tr>'
+  $('#tu').innerHTML = '<tr><th>email</th><th>họ tên</th><th>chức năng</th><th style="width:140px">vai trò</th><th style="width:90px">getfly_uid</th><th style="width:70px">active</th><th style="width:150px">hoạt động gần nhất</th><th style="width:170px">—</th></tr>'
     + (us||[]).map(u=>`<tr data-id="${u.id}">
         <td>${esc(u.email)}</td>
         <td><input data-k="ho_ten" value="${esc(u.ho_ten||'')}"></td>
@@ -263,7 +273,8 @@ async function renderAccounts(){
         <td><input data-k="getfly_uid" value="${esc(u.getfly_uid==null?'':u.getfly_uid)}"></td>
         <td><input data-k="active" value="${u.active}"></td>
         <td class="muted">${fmtTime(u.hoat_dong_cuoi)}</td>
-        <td><button class="sm pri" onclick="saveUser('${u.id}',this)">Lưu</button></td></tr>`).join('');
+        <td><button class="sm pri" onclick="saveUser('${u.id}',this)">Lưu</button>
+            <button class="sm" onclick="resetUserPw('${u.id}','${esc(u.email)}')">Reset MK</button></td></tr>`).join('');
   const { data:ps } = await sb.from('phan_quyen').select('*').order('vai_tro');
   $('#tp').innerHTML = '<tr><th style="width:140px">vai_tro</th><th>resource</th><th>action</th><th style="width:80px">cho_phep</th><th style="width:80px">—</th></tr>'
     + (ps||[]).map(p=>`<tr data-pk="${p.vai_tro}|${p.resource}|${p.action}">
@@ -275,6 +286,16 @@ async function renderAccounts(){
     + (dl||[]).map(x=>`<tr><td>${esc(x.tai_khoan)}</td><td>${esc(x.ho_ten||'')}</td>
         <td class="muted">${fmtTime(x.lan_cuoi)}</td><td>${esc(x.so_lan==null?'':x.so_lan)}</td></tr>`).join('')
     + ((dl||[]).length?'':'<tr><td colspan="4" class="muted">Chưa có lượt đăng nhập dashboard nào được ghi nhận.</td></tr>');
+  const { data:du } = await sb.from('dashboard_users').select('tai_khoan,ho_ten,active').order('tai_khoan');
+  $('#tdu').innerHTML = '<tr><th>tài khoản</th><th>họ tên</th><th style="width:80px">active</th><th style="width:230px">—</th></tr>'
+    + (du||[]).map(u=>`<tr>
+        <td>${esc(u.tai_khoan)}</td>
+        <td><input data-k="ho_ten" value="${esc(u.ho_ten||'')}"></td>
+        <td><input data-k="active" value="${u.active}" style="width:60px"></td>
+        <td><button class="sm pri" onclick="saveDashUser('${esc(u.tai_khoan)}',this)">Lưu</button>
+            <button class="sm" onclick="resetDashUser('${esc(u.tai_khoan)}')">Reset MK</button>
+            <button class="sm dng" onclick="delDashUser('${esc(u.tai_khoan)}')">Xoá</button></td></tr>`).join('')
+    + ((du||[]).length?'':'<tr><td colspan="4" class="muted">Chưa có tài khoản dashboard.</td></tr>');
 }
 window.addAccount = async ()=>{
   const email=$('#na_email').value.trim(), pw=$('#na_pw').value;
@@ -298,6 +319,39 @@ window.addAccount = async ()=>{
   btn.disabled=false;
   if(e2) return toast('Tạo đăng nhập OK nhưng lưu hồ sơ lỗi: '+e2.message,'err');
   toast('Đã tạo tài khoản '+email,'ok'); renderAccounts();
+};
+window.resetUserPw = async (id, email)=>{
+  const pw = prompt('Mật khẩu MỚI cho '+email+' (≥6 ký tự):');
+  if(pw==null) return;
+  if(pw.length<6) return toast('Mật khẩu tối thiểu 6 ký tự','err');
+  const { error } = await sb.rpc('admin_reset_password',{_uid:id,_new_pw:pw});
+  if(error) return toast(error.message,'err');
+  toast('Đã đặt lại mật khẩu cho '+email,'ok');
+};
+window.addDashUser = async ()=>{
+  const tk=$('#du_tk').value.trim(), ht=$('#du_ht').value.trim(), pw=$('#du_pw').value;
+  if(!tk||!pw) return toast('Cần tài khoản và mật khẩu','err');
+  if(pw.length<6) return toast('Mật khẩu tối thiểu 6 ký tự','err');
+  const { error } = await sb.rpc('admin_dashboard_user_upsert',{_tk:tk,_hoten:ht||null,_active:true,_mk:pw});
+  if(error) return toast(error.message,'err'); toast('Đã thêm tài khoản dashboard '+tk,'ok'); renderAccounts();
+};
+window.saveDashUser = async (tk, btn)=>{
+  const tr=btn.closest('tr'); let ht=null, act=true;
+  tr.querySelectorAll('[data-k]').forEach(i=>{ if(i.dataset.k==='ho_ten') ht=i.value.trim()||null; if(i.dataset.k==='active') act=(i.value==='true'||i.value===true); });
+  const { error } = await sb.rpc('admin_dashboard_user_upsert',{_tk:tk,_hoten:ht,_active:act,_mk:null});
+  if(error) return toast(error.message,'err'); toast('Đã lưu','ok');
+};
+window.resetDashUser = async (tk)=>{
+  const pw = prompt('Mật khẩu MỚI cho tài khoản dashboard "'+tk+'" (≥6 ký tự):');
+  if(pw==null) return;
+  if(pw.length<6) return toast('Mật khẩu tối thiểu 6 ký tự','err');
+  const { error } = await sb.rpc('admin_dashboard_user_upsert',{_tk:tk,_hoten:null,_active:null,_mk:pw});
+  if(error) return toast(error.message,'err'); toast('Đã đặt lại mật khẩu cho '+tk,'ok');
+};
+window.delDashUser = async (tk)=>{
+  if(!confirm('Xoá tài khoản dashboard "'+tk+'"?')) return;
+  const { error } = await sb.rpc('admin_dashboard_user_delete',{_tk:tk});
+  if(error) return toast(error.message,'err'); toast('Đã xoá '+tk,'ok'); renderAccounts();
 };
 window.saveUser = async (id, btn)=>{
   const tr=btn.closest('tr'); const o={};

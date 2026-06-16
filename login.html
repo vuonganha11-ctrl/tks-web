@@ -33,18 +33,18 @@ var btn=document.getElementById('btnLogin'),msgEl=document.getElementById('msg')
 function showMsg(t,tp){msgEl.textContent=t;msgEl.className='msg '+(tp||'err');}
 function isActive(u){if(u.active==null||u.active==='')return true;var v=String(u.active).toLowerCase();return v==='true'||v==='1'||u.active===true;}
 function decodeGviz(raw){var s=raw.indexOf('{'),e=raw.lastIndexOf('}');var j=JSON.parse(raw.substring(s,e+1));var cols=(j.table.cols||[]).map(function(c){return(c.label||c.id||'').trim();});return(j.table.rows||[]).map(function(row){var o={};(row.c||[]).forEach(function(cell,i){o[cols[i]]=cell?(cell.v!=null?cell.v:''):'';});return o;});}
-async function fetchUsers(){if(!SID)throw new Error('no_sheet_id');var amp=String.fromCharCode(38);var url='https://docs.google.com/spreadsheets/d/'+SID+'/gviz/tq?tqx=out:json'+amp+'headers=1'+amp+'sheet=Users'+amp+'cb='+Date.now();var res=await fetch(url);if(!res.ok)throw new Error('HTTP '+res.status);return decodeGviz(await res.text());}
-async function doLogin(){var tc=tcEl.value.trim().toLowerCase(),mp=mpEl.value.trim();if(!tc||!mp){showMsg('Vui lòng nhập tài khoản và mật khẩu.');return;}
+async function doLogin(){var tc=tcEl.value.trim(),mp=mpEl.value.trim();if(!tc||!mp){showMsg('Vui lòng nhập tài khoản và mật khẩu.');return;}
 btn.disabled=true;btn.innerHTML='<span class="spinner"></span>Đang kiểm tra...';msgEl.className='msg';
-try{if(!SID){showMsg('Chưa cấu hình Sheet ID.');return;}var users=await fetchUsers();
-var matched=users.find(function(u){return String(u.tai_khoan||'').trim().toLowerCase()===tc&&String(u.mat_khau||'').trim()===mp;});
-if(!matched){showMsg('Tài khoản hoặc mật khẩu không đúng.');return;}
-if(!isActive(matched)){showMsg('Tài khoản bị vô hiệu hóa.');return;}
-var tk=String(matched.tai_khoan).trim(),ht=String(matched.ho_ten||matched.tai_khoan||'').trim();
+try{
+var res=await fetch(SB_URL+'/rest/v1/rpc/dn_dashboard_check',{method:'POST',headers:{apikey:SB_ANON,Authorization:'Bearer '+SB_ANON,'Content-Type':'application/json'},body:JSON.stringify({_tk:tc,_mk:mp})});
+if(!res.ok)throw new Error('HTTP '+res.status);
+var rows=await res.json();
+if(!rows||!rows.length){showMsg('Tài khoản hoặc mật khẩu không đúng (hoặc bị vô hiệu hoá).');btn.disabled=false;btn.innerHTML='Đăng nhập';return;}
+var u=rows[0];var tk=String(u.tai_khoan).trim(),ht=String(u.ho_ten||u.tai_khoan||'').trim();
 sessionStorage.setItem(SK,JSON.stringify({tai_khoan:tk,ho_ten:ht,logged_at:Date.now()}));
 logDashboardLogin(tk,ht);
 showMsg('Đăng nhập thành công! Đang chuyển trang...','ok');btn.innerHTML='Đăng nhập';
 setTimeout(function(){var f=new URLSearchParams(location.search).get('from');location.replace(f?decodeURIComponent(f):'index.html');},500);
-}catch(e){showMsg(e.message==='no_sheet_id'?'Chưa cấu hình Sheet ID.':'Không đọc được tài khoản.');btn.disabled=false;btn.innerHTML='Đăng nhập';}}
+}catch(e){showMsg('Không kết nối được máy chủ. Thử lại.');btn.disabled=false;btn.innerHTML='Đăng nhập';}}
 btn.addEventListener('click',doLogin);[tcEl,mpEl].forEach(function(el){el.addEventListener('keydown',function(e){if(e.key==='Enter')doLogin();});});
 </script></body></html>
