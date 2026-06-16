@@ -71,7 +71,7 @@ const TABLES = {
   lichcongtac:{label:'Lịch công tác', pk:'id', order:'id', cols:[
     {k:'cot',w:60},{k:'dt',w:90},{k:'descr'},{k:'task_id',w:80},{k:'ppl',w:160},{k:'today',t:'num',w:55}]},
   donhang:    {label:'Đơn hàng', pk:'order_id', order:'order_id', cols:[
-    {k:'order_id',t:'num',w:80},{k:'khoi',sel:true,label:'Khối',w:130},{k:'kh'},{k:'kh_sub'},{k:'task_id',w:80},{k:'giai_doan',w:120},{k:'tien_do',w:70},{k:'han_congno'}]},
+    {k:'order_id',t:'num',w:80},{k:'kh'},{k:'kh_sub'},{k:'task_id',w:80},{k:'giai_doan',w:120},{k:'tien_do',w:70},{k:'han_congno'}]},
   meta:       {label:'Meta', pk:'key', order:'key', cols:[{k:'key',w:140},{k:'value'}]},
 };
 const ROLES = ['admin','truong_phong','dieu_phoi','ky_thuat'];
@@ -88,15 +88,13 @@ const DH_DEFS = {
 };
 let DH_ORDER = null;
 
-const KHOI_OPTS=[['proc','Đang xử lý'],['uu_tien','Ưu tiên'],['dich_vu','Dịch vụ TKS'],['cham_giao','Chậm giao']];
-function khoiFlag(v){ v=String(v==null?'':v).trim().toLowerCase(); return v!==''&&v!=='0'&&v!=='false'&&v!=='no'&&v!=='không'&&v!=='khong'; }
-function orderBlock(r){ if(khoiFlag(r.uu_tien))return'uu_tien'; if(khoiFlag(r.dich_vu))return'dich_vu'; if(khoiFlag(r.cham_giao))return'cham_giao'; return'proc'; }
 let ME = null; // {id,email,vai_tro,...}
 
 // ====================== TIỆN ÍCH ======================
 const $ = s => document.querySelector(s);
 function toast(msg, type){ const d=document.createElement('div'); d.className='t '+(type||''); d.textContent=msg; $('#toast').appendChild(d); setTimeout(()=>d.remove(), 3800); }
 function esc(s){ return (s==null?'':String(s)).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function fmtTime(s){ if(!s) return '<span class="muted">—</span>'; const d=new Date(s); if(isNaN(d)) return esc(s); return d.toLocaleString('vi-VN',{hour12:false,day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}); }
 
 // ====================== AUTH ======================
 async function init(){
@@ -104,6 +102,7 @@ async function init(){
   if(!session){ renderLogin(); return; }
   const { data:prof } = await sb.from('nguoi_dung').select('*').eq('id', session.user.id).maybeSingle();
   ME = prof || { id:session.user.id, email:session.user.email, vai_tro:'(chưa có hồ sơ)' };
+  if(prof){ try{ await sb.rpc('ghi_hoat_dong'); }catch(_e){} }  // ghi hoạt động gần nhất
   renderApp();
 }
 sb.auth.onAuthStateChange((_e,_s)=>{ /* no-op; init handles */ });
@@ -170,7 +169,7 @@ async function renderTable(name){
     <div class="hint">Sửa trực tiếp ô → bấm <b>Lưu</b> ở dòng. Quyền ghi theo vai trò (RLS) — nếu bị chặn sẽ báo lỗi.</div></div>`;
   const { data, error } = await sb.from(name).select('*').order(cfg.order, {ascending:true});
   if(error) return toast(error.message,'err');
-  const head = '<tr>'+cfg.cols.map(c=>`<th${c.w?` style="width:${c.w}px"`:''}>${c.label||c.k}</th>`).join('')+'<th style="width:120px">—</th></tr>';
+  const head = '<tr>'+cfg.cols.map(c=>`<th${c.w?` style="width:${c.w}px"`:''}>${c.k}</th>`).join('')+'<th style="width:120px">—</th></tr>';
   const body = (data||[]).map(r=>rowHtml(name,r)).join('');
   $('#tb').innerHTML = head + body;
 }
@@ -178,7 +177,6 @@ function rowHtml(name,r){
   const cfg=TABLES[name];
   const pkv = Array.isArray(cfg.pk)? cfg.pk.map(k=>r[k]).join('|') : r[cfg.pk];
   const cells = cfg.cols.map(c=>{
-    if(c.sel){ var _c=orderBlock(r); var _o=KHOI_OPTS.map(function(p){return '<option value="'+p[0]+'"'+(p[0]===_c?' selected':'')+'>'+esc(p[1])+'</option>';}).join(''); return '<td><select data-k="'+c.k+'">'+_o+'</select></td>'; }
     const v = r[c.k]==null?'':r[c.k];
     return `<td><input data-k="${c.k}" value="${esc(v)}"></td>`;
   }).join('');
@@ -190,14 +188,13 @@ window.addRow = name => { const empty={}; document.querySelector('#tb').insertAd
 
 function collect(tr,cfg){
   const o={};
-  tr.querySelectorAll('[data-k]').forEach(inp=>{
+  tr.querySelectorAll('input[data-k]').forEach(inp=>{
     let v = inp.value;
     const c = cfg.cols.find(x=>x.k===inp.dataset.k);
     if(v==='') v = null;
     else if(c && c.t==='num') v = Number(v);
     o[inp.dataset.k]=v;
   });
-  if('khoi' in o){ var b=o.khoi; delete o.khoi; o.uu_tien=b==='uu_tien'?1:null; o.dich_vu=b==='dich_vu'?1:null; o.cham_giao=b==='cham_giao'?1:null; }
   return o;
 }
 window.saveRow = async (name, btn)=>{
@@ -232,15 +229,28 @@ window.delRow = async (name, btn)=>{
 
 // ====================== TÀI KHOẢN & PHÂN QUYỀN ======================
 async function renderAccounts(){
-  $('#main').innerHTML = `<div class="card"><h3 class="sec">Tài khoản nhân viên</h3>
-     <div class="hint">Đổi vai trò/chức năng rồi bấm Lưu. (Chỉ admin sửa được — RLS.)</div>
+  $('#main').innerHTML = `<div class="card"><h3 class="sec">Thêm tài khoản mới</h3>
+     <div class="hint">Tạo tài khoản đăng nhập (email + mật khẩu) và gán vai trò ngay. Phiên đăng nhập của bạn KHÔNG bị ảnh hưởng. Người dùng có thể tự đổi mật khẩu sau.</div>
+     <div class="row">
+       <input class="f" id="na_email" type="email" placeholder="email *" style="max-width:200px">
+       <input class="f" id="na_pw" type="text" placeholder="mật khẩu * (≥6)" style="max-width:150px">
+       <input class="f" id="na_hoten" placeholder="họ tên" style="max-width:160px">
+       <input class="f" id="na_cn" placeholder="chức năng" style="max-width:150px">
+       <select class="f" id="na_vaitro" style="max-width:140px">${ROLES.map(r=>`<option ${r==='ky_thuat'?'selected':''}>${r}</option>`).join('')}</select>
+       <input class="f" id="na_uid" placeholder="getfly_uid" style="max-width:110px">
+       <button class="pri" id="na_btn">+ Tạo tài khoản</button>
+     </div></div>
+     <div class="card"><h3 class="sec">Tài khoản nhân viên</h3>
+     <div class="row" style="margin-bottom:8px"><button class="sm" onclick="renderAccounts()">↻ Tải lại</button>
+     <span class="hint" style="margin:0">Đổi vai trò/chức năng rồi bấm Lưu. (Chỉ admin sửa được — RLS.)</span></div>
      <div class="tbl-wrap"><table id="tu"></table></div></div>
      <div class="card"><h3 class="sec">Ma trận phân quyền (vai trò × khối × hành động)</h3>
      <div class="row" style="margin-bottom:8px"><button class="sm" onclick="renderAccounts()">↻ Tải lại</button>
      <button class="sm pri" onclick="addPerm()">+ Thêm quyền</button></div>
      <div class="tbl-wrap"><table id="tp"></table></div></div>`;
+  $('#na_btn').onclick = addAccount;
   const { data:us } = await sb.from('nguoi_dung').select('*').order('vai_tro');
-  $('#tu').innerHTML = '<tr><th>email</th><th>họ tên</th><th>chức năng</th><th style="width:140px">vai trò</th><th style="width:90px">getfly_uid</th><th style="width:70px">active</th><th style="width:80px">—</th></tr>'
+  $('#tu').innerHTML = '<tr><th>email</th><th>họ tên</th><th>chức năng</th><th style="width:140px">vai trò</th><th style="width:90px">getfly_uid</th><th style="width:70px">active</th><th style="width:150px">hoạt động gần nhất</th><th style="width:80px">—</th></tr>'
     + (us||[]).map(u=>`<tr data-id="${u.id}">
         <td>${esc(u.email)}</td>
         <td><input data-k="ho_ten" value="${esc(u.ho_ten||'')}"></td>
@@ -248,6 +258,7 @@ async function renderAccounts(){
         <td><select data-k="vai_tro">${ROLES.map(r=>`<option ${u.vai_tro===r?'selected':''}>${r}</option>`).join('')}</select></td>
         <td><input data-k="getfly_uid" value="${esc(u.getfly_uid==null?'':u.getfly_uid)}"></td>
         <td><input data-k="active" value="${u.active}"></td>
+        <td class="muted">${fmtTime(u.hoat_dong_cuoi)}</td>
         <td><button class="sm pri" onclick="saveUser('${u.id}',this)">Lưu</button></td></tr>`).join('');
   const { data:ps } = await sb.from('phan_quyen').select('*').order('vai_tro');
   $('#tp').innerHTML = '<tr><th style="width:140px">vai_tro</th><th>resource</th><th>action</th><th style="width:80px">cho_phep</th><th style="width:80px">—</th></tr>'
@@ -256,6 +267,29 @@ async function renderAccounts(){
         <td><input type="checkbox" data-k="cho_phep" ${p.cho_phep?'checked':''}></td>
         <td><button class="sm pri" onclick="savePerm(this)">Lưu</button></td></tr>`).join('');
 }
+window.addAccount = async ()=>{
+  const email=$('#na_email').value.trim(), pw=$('#na_pw').value;
+  if(!email||!pw) return toast('Cần email và mật khẩu','err');
+  if(pw.length<6) return toast('Mật khẩu tối thiểu 6 ký tự','err');
+  const btn=$('#na_btn'); btn.disabled=true;
+  // Client phụ: signUp tạo auth user mới mà KHÔNG ghi đè phiên admin (persistSession:false)
+  const tmp = supabase.createClient(SB_URL, SB_ANON, {auth:{storageKey:'tks_tmp_signup',persistSession:false,autoRefreshToken:false}});
+  const { data, error } = await tmp.auth.signUp({ email, password:pw });
+  if(error){ btn.disabled=false; return toast(error.message,'err'); }
+  const uid = data.user && data.user.id;
+  if(!uid){ btn.disabled=false; return toast('Đã gửi yêu cầu nhưng chưa lấy được ID (có thể cần xác nhận email trước).','err'); }
+  // Ghi hồ sơ qua phiên admin (có quyền tai_khoan/config). upsert: trigger tạo sẵn row → update, chưa có → insert.
+  const prof={ id:uid, email,
+    ho_ten:$('#na_hoten').value.trim()||null,
+    chuc_nang:$('#na_cn').value.trim()||null,
+    vai_tro:$('#na_vaitro').value,
+    getfly_uid:$('#na_uid').value===''?null:Number($('#na_uid').value),
+    active:true };
+  const { error:e2 } = await sb.from('nguoi_dung').upsert(prof);
+  btn.disabled=false;
+  if(e2) return toast('Tạo đăng nhập OK nhưng lưu hồ sơ lỗi: '+e2.message,'err');
+  toast('Đã tạo tài khoản '+email,'ok'); renderAccounts();
+};
 window.saveUser = async (id, btn)=>{
   const tr=btn.closest('tr'); const o={};
   tr.querySelectorAll('[data-k]').forEach(i=>{ let v=i.value; if(i.dataset.k==='getfly_uid') v=v===''?null:Number(v); if(i.dataset.k==='active') v=(v==='true'||v===true); o[i.dataset.k]=v; });
