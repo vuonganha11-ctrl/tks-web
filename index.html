@@ -959,5 +959,23 @@ function renderAll(d) {
   }
   document.addEventListener('change', function(e){ var t=e.target; if(t&&t.classList&&t.classList.contains('khoi-sel')){ tksMove(t.getAttribute('data-oid'), t); } });
 })();
-</script></body>
+</script>
+<script>
+/* TKS Layer-1 (17/06/2026): an dropdown doi Khoi voi user khong co quyen donhang/edit. RLS la lop chan thuc su. */
+(function(){try{
+  var SB="https://yncksjmovgfsyvhkztgw.supabase.co";
+  var ANON="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InluY2tzam1vdmdmc3l2aGt6dGd3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEyNDk1NjIsImV4cCI6MjA5NjgyNTU2Mn0.y-4DDvM8X2rBRpG0im2qNP-S1c_50IoxCIOVhYN0WpE";
+  var key=Object.keys(localStorage).filter(function(k){return /^sb-.*-auth-token$/.test(k);})[0];
+  if(!key) return;
+  var tok=null; try{var s=JSON.parse(localStorage.getItem(key)); tok=s&&(s.access_token||(s.currentSession&&s.currentSession.access_token));}catch(e){}
+  if(!tok) return;
+  fetch(SB+"/rest/v1/rpc/co_quyen",{method:"POST",headers:{apikey:ANON,Authorization:"Bearer "+tok,"Content-Type":"application/json"},body:JSON.stringify({_resource:"donhang",_action:"edit"})})
+   .then(function(r){return r.ok?r.json():null;})
+   .then(function(can){ if(can!==false) return;
+     function hide(){ document.querySelectorAll("select.khoi-sel").forEach(function(el){ el.disabled=true; el.style.display="none"; }); }
+     hide(); try{ new MutationObserver(hide).observe(document.body,{childList:true,subtree:true}); }catch(e){}
+   }).catch(function(){});
+}catch(e){}})();
+</script>
+</body>
 </html>
