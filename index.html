@@ -404,6 +404,29 @@ a.pstat .l{color:var(--steel)}
     </div>
   </section>
 
+  <!-- ĐƠN HÀNG: THEO DÕI (thu gọn được) -->
+  <section>
+    <div class="sec-h" id="trackHead" onclick="tksToggleTrack()" style="cursor:pointer;user-select:none">
+      <span class="no" style="background:var(--steel)">&#128064;</span><h2>Công việc — Theo dõi</h2><span class="cnt" id="ordersCntTrack"></span><span class="line"></span><span class="track-tg" id="trackToggle" aria-label="Thu gọn / mở khối theo dõi" style="font-size:12px;color:var(--steel)">&#9656;</span>
+    </div>
+    <div class="card scrollx" id="trackCard" style="display:none">
+      <table>
+        <thead><tr>
+          <th>Đơn hàng / Khách hàng</th><th style="width:96px">Task tổng</th><th style="width:150px">Giai đoạn</th>
+          <th style="width:140px">Tiến độ</th><th style="width:170px">Hạn / Công nợ</th><th style="width:130px">Cập nhật</th><th style="width:210px"></th>
+        </tr></thead>
+        <tbody id="ordersBodyTrack"></tbody>
+      </table>
+    </div>
+  </section>
+  <script>
+  (function(){
+    function ap(open){ var c=document.getElementById('trackCard'),t=document.getElementById('trackToggle'); if(!c)return; c.style.display=open?'':'none'; if(t)t.innerHTML=open?'&#9662;':'&#9656;'; }
+    window.tksToggleTrack=function(){ var o=document.getElementById('trackCard').style.display==='none'; ap(o); try{localStorage.setItem('tks_track_open',o?'1':'0');}catch(e){} };
+    try{ ap(localStorage.getItem('tks_track_open')==='1'); }catch(e){ ap(false); }
+  })();
+  </script>
+
   <!-- CON NGƯỜI -->
   <section>
     <div class="sec-h" style="margin-top:24px"><span class="no" style="background:var(--steel)">&#9992;</span><h2 style="font-size:18px">Lịch công tác đội Services</h2><span class="line"></span></div>
@@ -566,11 +589,11 @@ function renderOrders(rows) {
   function isPri(r){ return flag(r && r.uu_tien); }
   function isSx(r){ return flag(r && r.san_xuat); }
   function isSvc(r){ return flag(r && r.dich_vu); }
-  function isLate(r){ return flag(r && r.cham_giao); }
+  function isLate(r){ return flag(r && r.cham_giao); } function isTrack(r){ return flag(r && r.theo_doi); }
   function rowHtml(r) {
     var pct = Math.max(0, Math.min(100, num(r.tien_do)));
-    var _blk = isPri(r) ? 'uu_tien' : isSx(r) ? 'san_xuat' : isSvc(r) ? 'dich_vu' : isLate(r) ? 'cham_giao' : 'proc';
-    var _opts = [['proc','Đang xử lý'],['uu_tien','Ưu tiên'],['san_xuat','Đang SX · Lắp đặt'],['dich_vu','Dịch vụ TKS'],['cham_giao','Chậm giao']];
+    var _blk = isPri(r) ? 'uu_tien' : isSx(r) ? 'san_xuat' : isSvc(r) ? 'dich_vu' : isLate(r) ? 'cham_giao' : isTrack(r) ? 'theo_doi' : 'proc';
+    var _opts = [['proc','Đang xử lý'],['uu_tien','Ưu tiên'],['san_xuat','Đang SX · Lắp đặt'],['dich_vu','Dịch vụ TKS'],['cham_giao','Chậm giao'],['theo_doi','Theo dõi']];
     var _sel = window.__TKS_CAN_EDIT ? ('<select class="khoi-sel" data-oid="' + esc(r.order_id) + '" title="Đổi khối hiển thị trên dashboard">' + _opts.map(function(o){ return '<option value="' + o[0] + '"' + (o[0] === _blk ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') + '</select>') : '';
     var _note = (window.__TKS_NOTES && window.__TKS_NOTES[r.order_id]) ? ('<div class="khoi-note">↪ ' + esc(window.__TKS_NOTES[r.order_id]) + '</div>') : '';
     var bar = pct >= 100 ? "green" : "steel";
@@ -591,7 +614,8 @@ function renderOrders(rows) {
   var sx = rows.filter(function(r){ return !isPri(r) && isSx(r); });
   var svc = rows.filter(function(r){ return !isPri(r) && !isSx(r) && isSvc(r); });
   var late = rows.filter(function(r){ return !isPri(r) && !isSx(r) && !isSvc(r) && isLate(r); });
-  var proc = rows.filter(function(r){ return !isPri(r) && !isSx(r) && !isSvc(r) && !isLate(r); });
+  var track = rows.filter(function(r){ return !isPri(r) && !isSx(r) && !isSvc(r) && !isLate(r) && isTrack(r); });
+  var proc = rows.filter(function(r){ return !isPri(r) && !isSx(r) && !isSvc(r) && !isLate(r) && !isTrack(r); });
   $("ordersCntPriority").textContent = pri.length + " đơn";
   $("ordersCntSanxuat").textContent = sx.length + " đơn";
   $("ordersCntService").textContent = svc.length + " đơn";
@@ -602,6 +626,8 @@ function renderOrders(rows) {
   $("ordersBodyProcessing").innerHTML = proc.map(rowHtml).join("");
   $("ordersCntLate").textContent = late.length + " đơn";
   $("ordersBodyLate").innerHTML = late.length ? late.map(rowHtml).join("") : '<tr><td colspan="7" style="color:var(--grey);text-align:center;padding:16px">Chưa có đơn chậm giao — đánh dấu cột cham_giao trong tab DonHang.</td></tr>';
+  $("ordersCntTrack").textContent = track.length + " đơn";
+  $("ordersBodyTrack").innerHTML = track.length ? track.map(rowHtml).join("") : '<tr><td colspan="7" style="color:var(--grey);text-align:center;padding:16px">Chưa có đơn theo dõi — chọn "Theo dõi" ở cột Khối.</td></tr>';
 }
 function renderRevenue(rows) {
   rows = rows || [];
