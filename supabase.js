@@ -43,7 +43,21 @@
     return { muc_do: r.muc_do, task_id: r.task_id, noi_dung: r.noi_dung,
              tre: r.tre, nguoi_th: r.nguoi_th, don: r.nguoi_th, action: r.action };
   }
-  // RuiRo: bảng LIVE đúng schema cũ (kha_nang/giai_phap/trang_thai) — render giữ nguyên,
+  function fmtDT(s) {
+    if (!s) return "";
+    var d = new Date(s), off = 7 * 3600 * 1000;
+    var vn = new Date(d.getTime() + off);
+    function p2(n) { return (n < 10 ? "0" : "") + n; }
+    return p2(vn.getUTCDate()) + "/" + p2(vn.getUTCMonth()+1) + "/" + vn.getUTCFullYear() + " " + p2(vn.getUTCHours()) + ":" + p2(vn.getUTCMinutes());
+  }
+  function mapDonHang(r) {
+    return { kh: r.kh, kh_sub: r.kh_sub, task_id: r.task_id, giai_doan: r.giai_doan,
+             tien_do: r.tien_do, han_congno: r.han_congno, order_id: r.order_id,
+             uu_tien: r.uu_tien, san_xuat: r.san_xuat, dich_vu: r.dich_vu,
+             cham_giao: r.cham_giao, theo_doi: r.theo_doi,
+             cap_nhat: fmtDT(r.cap_nhat) };
+  }
+    // RuiRo: bảng LIVE đúng schema cũ (kha_nang/giai_phap/trang_thai) — render giữ nguyên,
   // không cần map. (KHÁC với skill cap-nhat-ruiro: skill đó ghi sai cột → cần sửa skill.)
 
   function mapGantt(r) {
@@ -57,7 +71,7 @@
     var res = await Promise.all([
       tbl("meta?select=key,value"),
       tbl("kpi?select=label,value,sub,color&order=id.asc"),
-      tbl("donhang?select=kh,kh_sub,task_id,giai_doan,tien_do,han_congno,order_id,uu_tien,san_xuat,dich_vu,cham_giao,theo_doi&order=order_id.asc"),
+      tbl("donhang?select=kh,kh_sub,task_id,giai_doan,tien_do,han_congno,order_id,uu_tien,san_xuat,dich_vu,cham_giao,theo_doi,cap_nhat&order=order_id.asc"),
       tbl("nhansu?select=nhom,ten,vai_tro,dang_lam,hom_nay,qua_han,ke_hoach,uid,nghi_phep,ord&order=ord.asc"),
       tbl("doanhso?select=loai,ky,actual,target"),
       tbl("lichcongtac?select=cot,dt,descr,task_id,ppl,today&order=id.asc"),
@@ -67,7 +81,7 @@
     return {
       Meta:        res[0],
       KPI:         res[1],
-      DonHang:     res[2],
+      DonHang:     res[2].map(mapDonHang),
       NhanSu:      res[3],
       DoanhSo:     res[4].map(mapDoanhSo),
       LichCongTac: res[5].map(mapLich),
