@@ -670,8 +670,11 @@ function renderHero(meta) {
 function renderKPI(rows) {
   $("kpis").innerHTML = (rows || []).map(function (r) {
     var cls = r.color ? " k-" + r.color : "";
-    var big = String(r.value).length >= 9 ? ' style="font-size:24px"' : "";
-    return '<div class="kpi' + cls + '"><div class="k">' + esc(r.label) + '</div><div class="n"' + big + '>' + esc(r.value) + '</div><div class="s">' + esc(r.sub) + '</div></div>';
+    var val = String(r.value);
+    if (/^\d{4,}$/.test(val)) val = val.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    if (/^\u0110\u1ea1t m\u1ee5c ti\u00eau/i.test(String(r.label)) && /^\d+$/.test(String(r.value))) val = val + '%';
+    var big = String(r.value).replace(/\D/g, '').length >= 9 ? ' style="font-size:24px"' : "";
+    return '<div class="kpi' + cls + '"><div class="k">' + esc(r.label) + '</div><div class="n"' + big + '>' + esc(val) + '</div><div class="s">' + esc(r.sub) + '</div></div>';
   }).join("");
 }
 function renderOrders(rows) {
