@@ -16,7 +16,7 @@ cat > "don-hang-$id.html" <<HTML
 <body>
 <div class="wrap" id="app"></div>
 <script src="config.js"></script>
-<script src="sheet.js"></script>
+<script src="supabase.js"></script>
 <script>window.ORDER_ID = "$id";</script>
 <script src="order.js"></script>
 </body>
