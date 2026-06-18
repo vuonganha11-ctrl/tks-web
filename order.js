@@ -1,14 +1,14 @@
 /* ====================================================================
    order.js — Dựng & render trang chi tiết 1 đơn hàng.
    Dùng chung cho don-hang.html (?id=) và mọi trang don-hang-<id>.html.
-   Trang vỏ chỉ cần: <div class="wrap" id="app"></div> + nạp config.js, sheet.js, order.js
+   Trang vỏ chỉ cần: <div class="wrap" id="app"></div> + nạp config.js, supabase.js, order.js
    (đặt window.ORDER_ID = "<mã đơn>" nếu muốn cố định 1 đơn).
    ==================================================================== */
 var LAYOUT = "  <div id=\"sampleBanner\" style=\"display:none;background:var(--amber-soft);border:1px solid #e7cf98;color:#7a5a00;border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:13px;font-weight:600\"></div>\n\n  <!-- HERO -->\n  <div class=\"hero\">\n    <div class=\"kick\">THEO DÕI ĐƠN HÀNG · THAI KHUONG</div>\n    <h1 id=\"heroTitle\">—</h1>\n    <div class=\"cust\" id=\"heroCust\"></div>\n    <div class=\"codeline\" id=\"heroChips\"></div>\n    <div class=\"right\">\n      <span class=\"logo-plate plate-tkt\"><img src=\"assets/logo-1.png\" alt=\"TKT\"></span>\n      <span class=\"logo-plate\"><img src=\"assets/logo-2.png\" alt=\"TKS\"></span>\n    </div>\n  </div>\n\n  <!-- TOP ROW: hạn giao · bước hiện tại · cập nhật -->\n  <section style=\"margin-top:22px\">\n    <div class=\"toprow\">\n      <div class=\"deadline\">\n        <div class=\"dl-ic\">&#9203;</div>\n        <div><div class=\"dl-k\">Hạn giao hàng</div><div class=\"dl-v\" id=\"dlDate\">—</div></div>\n        <div class=\"dl-meta\" id=\"dlMeta\"></div>\n      </div>\n      <div class=\"updated stagecard\">\n        <div class=\"u-k\">Bước hiện tại</div>\n        <div class=\"u-meta\" id=\"stageName\">—</div>\n        <div class=\"u-id\" id=\"stageId\">—</div>\n      </div>\n      <div class=\"updated\">\n        <div class=\"u-k\">Cập nhật mới nhất</div>\n        <div class=\"u-v\" id=\"updDate\">—</div>\n        <div class=\"u-meta\" id=\"updMeta\"></div>\n      </div>\n    </div>\n  </section>\n\n  <!-- PIPELINE -->\n  <section>\n    <div class=\"sec-h\"><span class=\"no\">&#9635;</span><h2>Tiến độ xử lý</h2><span class=\"line\"></span></div>\n    <div class=\"card pad\">\n      <div class=\"pipe\" id=\"pipe\"></div>\n      <div class=\"legend\"><span><i style=\"background:var(--green)\"></i>Hoàn thành</span><span><i style=\"background:var(--amber)\"></i>Đang ở bước này</span><span><i style=\"background:var(--ice)\"></i>Chưa tới</span></div>\n    </div>\n  </section>\n\n  <!-- GANTT -->\n  <section id=\"ganttSec\" style=\"display:none\">\n    <div class=\"sec-h\"><span class=\"no\">&#9638;</span><h2>Gantt — tiến độ dự án (dự kiến)</h2><span class=\"line\"></span></div>\n    <div class=\"gwrap\"><div class=\"gantt\" id=\"gantt\"></div></div>\n  </section>\n\n  <!-- CÂY CÔNG VIỆC -->\n  <section>\n    <div class=\"sec-h\"><span class=\"no\">&#9745;</span><h2>Việc đang làm</h2><span class=\"line\"></span></div>\n    <div class=\"tree\" id=\"tree\"></div>\n    <div class=\"tlegend\"><span><b class=\"g1\">Con</b>cấp 1</span><span><b class=\"g2\">Cháu</b>cấp 2</span><span><b class=\"g3\">Chắt</b>cấp 3</span><span><b class=\"g4\">Chút</b>cấp 4</span></div>\n  </section>\n\n  <!-- VIỆC CẦN LÀM -->\n  <section id=\"todoSec\">\n    <div class=\"sec-h\"><span class=\"no\">&#10003;</span><h2>Việc cần làm</h2><span class=\"line\"></span></div>\n    <div class=\"card pad\"><ul class=\"todo\" id=\"todo\"></ul></div>\n  </section>\n\n  <!-- DIỄN BIẾN -->\n  <section>\n    <div class=\"sec-h\"><span class=\"no\">&#8627;</span><h2>Diễn biến chính — theo nguồn</h2><span class=\"line\"></span></div>\n    <div class=\"cols\" style=\"display:grid;grid-template-columns:1fr 1fr;gap:16px\">\n      <div class=\"card pad\"><div style=\"font-family:'Saira Condensed',sans-serif;font-weight:800;color:var(--navy);margin-bottom:10px\">Getfly CRM</div><div class=\"tl crm\" id=\"tlCrm\"></div></div>\n      <div class=\"card pad\"><div style=\"font-family:'Saira Condensed',sans-serif;font-weight:800;color:var(--navy);margin-bottom:10px\">Google Chat</div><div class=\"tl chat\" id=\"tlChat\"></div></div>\n    </div>\n  </section>\n\n  <!-- THÔNG TIN CHÍNH -->\n  <section>\n    <div class=\"sec-h\"><span class=\"no\">i</span><h2>Thông tin chính</h2><span class=\"line\"></span></div>\n    <div class=\"grid\" id=\"infoGrid\"></div>\n  </section>\n\n  <!-- HẠNG MỤC -->\n  <section id=\"hangmucSec\" style=\"display:none\">\n    <div class=\"sec-h\"><span class=\"no\">&#9881;</span><h2>Hạng mục đơn hàng</h2><span class=\"line\"></span></div>\n    <div class=\"card\" style=\"overflow-x:auto\"><table>\n      <thead><tr><th style=\"width:34px\">#</th><th>Model &amp; thông số</th><th style=\"width:60px\">SL</th><th style=\"width:70px\">ĐVT</th><th>Ghi chú</th></tr></thead>\n      <tbody id=\"hmBody\"></tbody>\n    </table></div>\n  </section>\n\n  <!-- THANH TOÁN -->\n  <section>\n    <div class=\"sec-h\"><span class=\"no\">&#8363;</span><h2>Thanh toán</h2><span class=\"line\"></span></div>\n    <div class=\"card pad\">\n      <div class=\"pay\">\n        <div class=\"pcard due\"><div class=\"l\">Phải thu</div><div class=\"n mono\" id=\"payDue\">0</div></div>\n        <div class=\"pcard paid\"><div class=\"l\">Đã thu</div><div class=\"n mono\" id=\"payPaid\">0</div></div>\n        <div class=\"pcard left\"><div class=\"l\">Còn lại</div><div class=\"n mono\" id=\"payLeft\">0</div></div>\n      </div>\n      <div class=\"pbar\"><i id=\"payBar\" style=\"width:0%\"></i></div>\n    </div>\n  </section>\n\n  <!-- HỒ SƠ -->\n  <section id=\"hosoSec\" style=\"display:none\">\n    <div class=\"sec-h\"><span class=\"no\">&#128462;</span><h2>Hồ sơ &amp; tài liệu</h2><span class=\"line\"></span></div>\n    <div class=\"card\" style=\"overflow:hidden\"><table>\n      <thead><tr><th style=\"width:90px\">Ngày</th><th>Tệp / Tài liệu</th><th style=\"width:160px\">Loại</th><th>Ghi chú</th></tr></thead>\n      <tbody id=\"hosoBody\"></tbody>\n    </table></div>\n  </section>\n\n  <footer id=\"footer\"></footer>\n  <div style=\"text-align:center;margin-top:14px\"><a href=\"index.html\" style=\"font-size:12px;color:var(--steel);text-decoration:none\">&#8592; Về Dashboard</a></div>";
 
 /* ===== CẤU HÌNH: dùng CHUNG một Sheet ID với index.html ===== */
-var SHEET_ID = (window.TKS_SHEET_ID || "");
-var TABS_DH = ["DH_Info", "DH_CongViec", "DH_ToDo", "DH_Timeline", "DH_HangMuc", "DH_HoSo", "DH_Gantt"];
+
+
 
 /* Pipeline chuẩn TKT (đánh dấu trạng thái theo cột "buoc" trong DH_Info) */
 var PIPELINE = [
@@ -63,7 +63,7 @@ var SAMPLE = {
 };
 
 /* ===== Tiện ích ===== */
-var esc = Sheet.esc, num = Sheet.num, vnd = Sheet.vnd, task = Sheet.getflyTask;
+var esc = Supa.esc, num = Supa.num, vnd = Supa.vnd, task = Supa.getflyTask;
 function $(id) { return document.getElementById(id); }
 function showBanner(msg) { var b = $("sampleBanner"); b.textContent = "ⓘ " + msg; b.style.display = "block"; }
 function rowsFor(arr, id) { return (arr || []).filter(function (r) { return String(r.order_id).trim() === String(id).trim(); }); }
@@ -225,25 +225,16 @@ function renderAll(data, id) {
   document.getElementById("app").innerHTML = LAYOUT;
   var id = (window.ORDER_ID || new URLSearchParams(location.search).get("id") || "");
   var data, useSample = false;
-
-  async function fetchAllTolerant() {
-    var out = {};
-    await Promise.all(TABS_DH.map(async function (t) {
-      try { out[t] = await Sheet.fetchTab(SHEET_ID.trim(), t); }
-      catch (e) { console.warn("Bỏ qua tab", t, e); out[t] = []; }
-    }));
-    return out;
-  }
-
-  if (SHEET_ID && SHEET_ID.trim()) {
-    data = await fetchAllTolerant();
-    if (!(data.DH_Info && data.DH_Info.length)) {
-      data = SAMPLE; useSample = true;
-      showBanner("Không đọc được dữ liệu đơn hàng — đang dùng dữ liệu mẫu. Kiểm tra Sheet ID, tên tab DH_* và quyền chia sẻ.");
-    }
-  } else {
-    data = SAMPLE; useSample = true;
-    showBanner("Chưa cấu hình Sheet ID — đang hiển thị dữ liệu mẫu (đơn 5143).");
+  try {
+    var o = await Supa.fetchOrder(id);
+    data = {
+      DH_Info: o.Info ? [o.Info] : [],
+      DH_CongViec: o.CongViec, DH_ToDo: o.ToDo, DH_Timeline: o.Timeline,
+      DH_HangMuc: o.HangMuc, DH_HoSo: o.HoSo, DH_Gantt: o.Gantt
+    };
+    if (!(data.DH_Info && data.DH_Info.length)) { data = SAMPLE; useSample = true; showBanner("Khong doc duoc don #" + id + " - dang dung du lieu mau."); }
+  } catch (e) {
+    console.error(e); data = SAMPLE; useSample = true; showBanner("Khong doc duoc Supabase - dang dung du lieu mau.");
   }
 
   if (!id) {
