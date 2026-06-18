@@ -471,7 +471,7 @@ a.pstat .l{color:var(--steel)}
 
 <script src="config.js"></script>
 <script src="auth.js"></script>
-<script src="sheet.js"></script>
+<script src="supabase.js"></script>
 <script>
 function fmtDate(s){
   if(!s) return '';
@@ -561,7 +561,7 @@ var SAMPLE = {
 };
 
 /* ====================== TIỆN ÍCH ====================== */
-var esc = Sheet.esc, num = Sheet.num, vnd = Sheet.vnd, rateClass = Sheet.rateClass, task = Sheet.getflyTask;
+var esc = Supa.esc, num = Supa.num, vnd = Supa.vnd, rateClass = Supa.rateClass, task = Supa.getflyTask;
 function $(id) { return document.getElementById(id); }
 function metaVal(rows, k) { var r = (rows || []).find(function (x) { return String(x.key).trim() === k; }); return r ? r.value : ""; }
 function initials(name) {
@@ -867,9 +867,9 @@ function renderAll(d) {
 /* ====================== BOOT ====================== */
 (async function () {
   var data;
-  if (SHEET_ID && SHEET_ID.trim()) {
+  if (true) {
     try {
-      data = await Sheet.fetchTabs(SHEET_ID.trim(), TABS);
+      data = await Supa.fetchAll();
     } catch (e) {
       console.error(e);
       data = SAMPLE;
