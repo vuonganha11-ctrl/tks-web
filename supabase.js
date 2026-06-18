@@ -46,6 +46,12 @@
   // RuiRo: bảng LIVE đúng schema cũ (kha_nang/giai_phap/trang_thai) — render giữ nguyên,
   // không cần map. (KHÁC với skill cap-nhat-ruiro: skill đó ghi sai cột → cần sửa skill.)
 
+  function mapGantt(r) {
+    return { pha: r.pha, meta: r.meta, mau: r.mau, order_id: r.order_id,
+             offset: (r.offset != null ? r.offset : r.gantt_offset),
+             width:  (r.width  != null ? r.width  : r.gantt_width) };
+  }
+
   // Đọc toàn bộ dữ liệu dashboard (1 lần, song song).
   async function fetchAll() {
     var res = await Promise.all([
@@ -87,8 +93,17 @@
     return {
       Info: res[0][0] || null,
       CongViec: res[1], ToDo: res[2], Timeline: res[3],
-      HangMuc: res[4], HoSo: res[5], Gantt: res[6]
+      HangMuc: res[4], HoSo: res[5], Gantt: res[6].map(mapGantt)
     };
+  }
+
+  // Đọc danh sách TẤT CẢ đơn (cho danh-sach-don.html) + meta cập nhật.
+  async function fetchOrders() {
+    var res = await Promise.all([
+      tbl("donhang?select=order_id,kh,kh_sub,task_id,giai_doan,tien_do,han_congno&order=order_id.asc"),
+      tbl("meta?select=key,value")
+    ]);
+    return { DH_Info: res[0], Meta: res[1] };
   }
 
   // ---- Tiện ích dùng chung (giữ y hệt sheet.js để render không phải đổi) ----
@@ -101,8 +116,8 @@
   global.Supa = {
     fetchAll: fetchAll,
     fetchOrder: fetchOrder,
+    fetchOrders: fetchOrders,
     getflyTask: getflyTask,
     esc: esc, num: num, rateClass: rateClass, vnd: vnd
   };
 })(window);
-x
