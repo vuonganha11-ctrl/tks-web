@@ -921,7 +921,7 @@ function renderAll(d) {
     return j.access_token||null;
   }
   function hdr(tk,extra){ var h={apikey:SBK, Authorization:'Bearer '+(tk||SBK), 'Content-Type':'application/json'}; if(extra){for(var k in extra)h[k]=extra[k];} return h; }
-  var creds=fetch('sheet.js').then(function(r){return r.text();}).then(function(t){ var u=t.match(/TKS_SB_URL\s*=\s*"([^"]+)"/); var k=t.match(/TKS_SB_ANON\s*=\s*"([^"]+)"/); SBU=u&&u[1]; SBK=k&&k[1]; READY=!!(SBU&&SBK); });
+  var creds=fetch('config.js').then(function(r){return r.text();}).then(function(t){ var u=t.match(/TKS_SB_URL\s*=\s*"([^"]+)"/); var k=t.match(/TKS_SB_ANON\s*=\s*"([^"]+)"/); SBU=u&&u[1]; SBK=k&&k[1]; READY=!!(SBU&&SBK); });
   creds.then(async function(){
     if(!READY) return;
     var tk=await ensureToken();
