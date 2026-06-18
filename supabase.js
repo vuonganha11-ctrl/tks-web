@@ -51,7 +51,7 @@
     var res = await Promise.all([
       tbl("meta?select=key,value"),
       tbl("kpi?select=label,value,sub,color&order=id.asc"),
-      tbl("donhang?select=kh,kh_sub,task_id,giai_doan,tien_do,han_congno,order_id&order=order_id.asc"),
+      tbl("donhang?select=kh,kh_sub,task_id,giai_doan,tien_do,han_congno,order_id,uu_tien,san_xuat,dich_vu,cham_giao,theo_doi&order=order_id.asc"),
       tbl("nhansu?select=nhom,ten,vai_tro,dang_lam,hom_nay,qua_han,ke_hoach,uid,nghi_phep,ord&order=ord.asc"),
       tbl("doanhso?select=loai,ky,actual,target"),
       tbl("lichcongtac?select=cot,dt,descr,task_id,ppl,today&order=id.asc"),
