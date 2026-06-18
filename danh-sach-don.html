@@ -325,10 +325,10 @@ a.pstat .l{color:var(--steel)}
 
 <script src="config.js"></script>
 <script src="auth.js"></script>
-<script src="sheet.js"></script>
+<script src="supabase.js"></script>
 <script>
 /* dùng CHUNG một Sheet ID với index.html / don-hang.html */
-var SHEET_ID = (window.TKS_SHEET_ID || "");
+
 var SAMPLE = {
   Meta: [{ key: "cap_nhat", value: "30/05/2026 08:30" }],
   DonHang: [
@@ -337,7 +337,7 @@ var SAMPLE = {
   ]
 };
 
-var esc = Sheet.esc, task = Sheet.getflyTask;
+var esc = Supa.esc, task = Supa.getflyTask;
 function $(id) { return document.getElementById(id); }
 function showBanner(m) { var b = $("sampleBanner"); b.textContent = "ⓘ " + m; b.style.display = "block"; }
 
@@ -372,11 +372,11 @@ function applyFilter() {
 
 (async function () {
   var data;
-  if (SHEET_ID && SHEET_ID.trim()) {
+  if (true) {
     try {
-      var info = await Sheet.fetchTab(SHEET_ID.trim(), "DonHang");
+      var __o = await Supa.fetchOrders(); var info = __o.DH_Info || [];
       var meta = [];
-      try { meta = await Sheet.fetchTab(SHEET_ID.trim(), "Meta"); } catch (e) { }
+      meta = (typeof __o!=="undefined" && __o.Meta) ? __o.Meta : [];
       data = { DonHang: info, Meta: meta };
       if (!info.length) { data = SAMPLE; showBanner("Không đọc được DonHang — đang dùng dữ liệu mẫu."); }
     } catch (e) {
