@@ -5,7 +5,6 @@
    ==================================================================== */
 // GIỮ LẠI cho trang đơn hàng (don-hang.html/danh-sach-don.html) vẫn đọc gviz
 // tới khi migrate Phase 2. Dashboard (index.html) đã chuyển sang Supabase.
-window.TKS_SHEET_ID = "1Hk49-OXujQCHanrYUaAyhc9kDNAi6gYker1f1_44p2Q";
 
 window.TKS_SB_URL  = "https://yncksjmovgfsyvhkztgw.supabase.co";
 
