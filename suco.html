@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Theo dõi sự cố 2026 · TKS</title>
+<!-- Gate đăng nhập dashboard (giống các trang khác): cần localStorage tks_auth_v1 -->
+<script>try{if(!localStorage.getItem('tks_auth_v1')){location.replace('login.html');}}catch(e){}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root{
+    --navy:#0f2742;--navy2:#173a5e;--steel:#3d6695;--ice:#e8eef5;--ice2:#f4f7fb;
+    --amber:#e08a00;--amber-soft:#fbeccd;--green:#2f7d4f;--green-soft:#e0f0e6;
+    --red:#c0392b;--red-soft:#fbe5e2;--grey:#6b7a8d;--line:#d6dee8;--ink:#16202c;
+    --shadow:0 1px 2px rgba(15,39,66,.06),0 8px 24px rgba(15,39,66,.08);
+  }
+  *{box-sizing:border-box}
+  body{font-family:"IBM Plex Sans",system-ui,Segoe UI,sans-serif;color:var(--ink);
+    background:radial-gradient(1200px 500px at 80% -10%,rgba(61,102,149,.1),transparent 60%) fixed,
+               linear-gradient(#eef3f8 0%,#e6edf4 100%);line-height:1.5;padding:28px 18px 70px;margin:0}
+  .wrap{max-width:1240px;margin:0 auto}
+  a{color:var(--steel)}
+  .hero{background:linear-gradient(135deg,var(--navy) 0%,var(--navy2) 60%,#1d456e 100%);color:#fff;
+    border-radius:18px;padding:26px 30px;box-shadow:var(--shadow);position:relative;overflow:hidden}
+  .hero h1{margin:0 0 4px;font-size:24px;letter-spacing:.3px}
+  .hero p{margin:0;color:#cfdcec;font-size:13px}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+  .chip{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;
+    background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.22);padding:6px 12px;
+    border-radius:999px;color:#eaf2fb;text-decoration:none;cursor:pointer}
+  .chip:hover{background:rgba(255,255,255,.2)}
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:18px 0}
+  .kpi{background:#fff;border:1px solid var(--line);border-radius:14px;padding:15px 16px;box-shadow:var(--shadow)}
+  .kpi .lbl{font-size:12px;color:var(--grey);font-weight:600;text-transform:uppercase;letter-spacing:.4px}
+  .kpi .val{font-size:30px;font-weight:700;margin-top:4px}
+  .kpi .val.green{color:var(--green)}.kpi .val.red{color:var(--red)}.kpi .val.amber{color:var(--amber)}
+  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:18px}
+  .panel{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px 16px 18px;box-shadow:var(--shadow)}
+  .panel h3{margin:0 0 10px;font-size:14px;color:var(--navy)}
+  .panel .cv{position:relative;height:230px}
+  .tablecard{background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);overflow:hidden}
+  .tablecard .top{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+  .tablecard .top h3{margin:0;font-size:15px;color:var(--navy)}
+  .tablecard .top .sp{flex:1}
+  #q{border:1px solid var(--line);border-radius:8px;padding:7px 11px;font:inherit;font-size:13px;min-width:220px}
+  .tbl-wrap{overflow:auto;max-height:70vh}
+  table{width:100%;border-collapse:collapse;font-size:12.5px}
+  th,td{border-bottom:1px solid var(--line);padding:7px 9px;text-align:left;vertical-align:top}
+  th{background:var(--ice2);color:var(--grey);font-weight:600;position:sticky;top:0;white-space:nowrap;z-index:1}
+  tr:hover td{background:#fafcfe}
+  td.num{text-align:center;white-space:nowrap}
+  .badge{display:inline-block;font-size:11px;font-weight:600;padding:2px 9px;border-radius:999px;white-space:nowrap}
+  .badge.green{background:var(--green-soft);color:var(--green)}
+  .badge.red{background:var(--red-soft);color:var(--red)}
+  .badge.amber{background:var(--amber-soft);color:#9a5e00}
+  .src{font-size:11px;font-weight:600;color:var(--steel)}
+  .muted{color:var(--grey)}
+  .loading{padding:40px;text-align:center;color:var(--grey)}
+  @media(max-width:900px){.kpis{grid-template-columns:repeat(2,1fr)}.grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="hero">
+    <h1>🛠️ Theo dõi sự cố 2026</h1>
+    <p>Bảng theo dõi &amp; phân tích sự cố — Thái Khương (TKS)</p>
+    <div class="chips">
+      <a class="chip" href="index.html">← Bảng điều hành</a>
+      <a class="chip" href="danh-sach-don.html">📋 Danh sách đơn hàng</a>
+      <span class="chip" id="reload">↻ Tải lại</span>
+      <span class="chip" id="updated"></span>
+    </div>
+  </div>
+
+  <div class="kpis" id="kpis"></div>
+
+  <div class="grid">
+    <div class="panel"><h3>Nguồn gây sự cố</h3><div class="cv"><canvas id="c_nguon"></canvas></div></div>
+    <div class="panel"><h3>Kỹ thuật viên xử lý</h3><div class="cv"><canvas id="c_ktv"></canvas></div></div>
+    <div class="panel"><h3>Tình trạng xử lý sự cố</h3><div class="cv"><canvas id="c_tt"></canvas></div></div>
+    <div class="panel"><h3>Sự cố theo Phân loại KH</h3><div class="cv"><canvas id="c_kh"></canvas></div></div>
+    <div class="panel"><h3>Tỷ lệ sự cố theo Người bán</h3><div class="cv"><canvas id="c_nb"></canvas></div></div>
+    <div class="panel"><h3>Sự cố theo Hãng</h3><div class="cv"><canvas id="c_hang"></canvas></div></div>
+  </div>
+
+  <div class="tablecard">
+    <div class="top">
+      <h3>Chi tiết sự cố</h3>
+      <span class="muted" id="count"></span>
+      <div class="sp"></div>
+      <input id="q" placeholder="Tìm theo tên, khách hàng, hãng, KTV…">
+    </div>
+    <div class="tbl-wrap"><table id="tbl"><thead></thead><tbody></tbody></table></div>
+  </div>
+</div>
+
+<script>
+const SB_URL='https://yncksjmovgfsyvhkztgw.supabase.co';
+const SB_ANON='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InluY2tzam1vdmdmc3l2aGt6dGd3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEyNDk1NjIsImV4cCI6MjA5NjgyNTU2Mn0.y-4DDvM8X2rBRpG0im2qNP-S1c_50IoxCIOVhYN0WpE';
+const GETFLY_TASK='https://thaikhuong.getflycrm.com/work/task/detail/id/';
+
+const PALETTE=['#3d6695','#e08a00','#2f7d4f','#c0392b','#7b5ea7','#1d9bb0','#d4a017','#8a8d91',
+  '#5a86c4','#e0662a','#46a06b','#c75c8a','#9aa7b4','#356e8a','#b07d2a','#6f7f93'];
+const esc=s=>(s==null?'':String(s)).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+let DATA=[], charts={};
+
+function statusClass(s){ s=(s||'').toLowerCase();
+  if(s.includes('đã')) return 'green';
+  if(s.includes('đang')) return 'amber';
+  return 'red'; }
+
+function countBy(rows,key){
+  const m=new Map();
+  rows.forEach(r=>{ const v=(r[key]==null)?'':String(r[key]).trim();
+    if(v==='') return;            // bỏ ô trống khỏi biểu đồ (khớp sheet mẫu)
+    m.set(v,(m.get(v)||0)+1); });
+  return [...m.entries()].sort((a,b)=>b[1]-a[1]);
+}
+
+function pie(id,pairs){
+  const ctx=document.getElementById(id);
+  if(charts[id]) charts[id].destroy();
+  const total=pairs.reduce((s,p)=>s+p[1],0)||1;
+  charts[id]=new Chart(ctx,{type:'pie',
+    data:{labels:pairs.map(p=>p[0]),datasets:[{data:pairs.map(p=>p[1]),
+      backgroundColor:pairs.map((_,i)=>PALETTE[i%PALETTE.length]),borderColor:'#fff',borderWidth:1.5}]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{position:'right',labels:{boxWidth:11,font:{size:11},padding:7}},
+        tooltip:{callbacks:{label:c=>` ${c.label}: ${c.parsed} (${(c.parsed/total*100).toFixed(1)}%)`}}}}});
+}
+
+function renderKpis(rows){
+  const tong=rows.length;
+  const xong=rows.filter(r=>statusClass(r.trang_thai)==='green').length;
+  const dang=tong-xong;
+  const cong=rows.reduce((s,r)=>s+(Number(r.so_cong)||0),0);
+  document.getElementById('kpis').innerHTML=`
+    <div class="kpi"><div class="lbl">Tổng sự cố</div><div class="val">${tong}</div></div>
+    <div class="kpi"><div class="lbl">Đã xử lý</div><div class="val green">${xong}</div></div>
+    <div class="kpi"><div class="lbl">Đang xử lý</div><div class="val red">${dang}</div></div>
+    <div class="kpi"><div class="lbl">Tổng số công</div><div class="val amber">${cong}</div></div>`;
+}
+
+function renderCharts(rows){
+  pie('c_nguon',countBy(rows,'nguon_gay_loi'));
+  pie('c_ktv',countBy(rows,'ky_thuat_vien'));
+  pie('c_tt',countBy(rows,'trang_thai'));
+  pie('c_kh',countBy(rows,'phan_loai_kh'));
+  pie('c_nb',countBy(rows,'nguoi_ban'));
+  pie('c_hang',countBy(rows,'hang'));
+}
+
+function renderTable(rows){
+  document.querySelector('#tbl thead').innerHTML=`<tr>
+    <th>#</th><th>Tên công việc</th><th>Bắt đầu</th><th>Kết thúc</th><th>Khách hàng</th>
+    <th>Phân loại KH</th><th>Hãng</th><th>Người bán</th><th>KTV</th><th>Vấn đề</th>
+    <th>Nguyên nhân</th><th>Nguồn gây lỗi</th><th>Trạng thái</th><th>Số công</th><th>Task ID</th><th>Note</th></tr>`;
+  document.querySelector('#tbl tbody').innerHTML=rows.map(r=>`<tr>
+    <td class="num">${esc(r.stt)}</td>
+    <td style="min-width:240px">${esc(r.ten_cong_viec)}</td>
+    <td class="num">${esc(r.bat_dau)}</td>
+    <td class="num">${esc(r.ket_thuc)}</td>
+    <td>${esc(r.khach_hang)}</td>
+    <td>${esc(r.phan_loai_kh)}</td>
+    <td>${esc(r.hang)}</td>
+    <td>${esc(r.nguoi_ban)}</td>
+    <td>${esc(r.ky_thuat_vien)}</td>
+    <td style="min-width:180px">${esc(r.van_de)}</td>
+    <td style="min-width:180px">${esc(r.nguyen_nhan)}</td>
+    <td>${esc(r.nguon_gay_loi)}</td>
+    <td><span class="badge ${statusClass(r.trang_thai)}">${esc(r.trang_thai)}</span></td>
+    <td class="num">${esc(r.so_cong)}</td>
+    <td class="num">${r.task_id?`<a class="src" href="${GETFLY_TASK}${esc(r.task_id)}" target="_blank">${esc(r.task_id)}</a>`:''}</td>
+    <td class="muted">${esc(r.note)}</td></tr>`).join('');
+  document.getElementById('count').textContent=`${rows.length} sự cố`;
+}
+
+function applyFilter(){
+  const q=document.getElementById('q').value.trim().toLowerCase();
+  if(!q) return renderTable(DATA);
+  const f=DATA.filter(r=>['ten_cong_viec','khach_hang','hang','nguoi_ban','ky_thuat_vien','van_de','nguyen_nhan','nguon_gay_loi','trang_thai','task_id']
+    .some(k=>String(r[k]||'').toLowerCase().includes(q)));
+  renderTable(f);
+}
+
+async function load(){
+  document.querySelector('#tbl tbody').innerHTML='<tr><td colspan="16" class="loading">Đang tải dữ liệu…</td></tr>';
+  try{
+    const r=await fetch(`${SB_URL}/rest/v1/suco_2026?select=*&order=stt`,{headers:{apikey:SB_ANON,Authorization:'Bearer '+SB_ANON}});
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    DATA=await r.json();
+    renderKpis(DATA); renderCharts(DATA); renderTable(DATA);
+    document.getElementById('updated').textContent='Cập nhật: '+new Date().toLocaleString('vi-VN',{hour12:false,day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
+  }catch(e){
+    document.querySelector('#tbl tbody').innerHTML=`<tr><td colspan="16" class="loading">Lỗi tải dữ liệu: ${esc(e.message)}</td></tr>`;
+  }
+}
+document.getElementById('q').addEventListener('input',applyFilter);
+document.getElementById('reload').addEventListener('click',load);
+load();
+</script>
+</body>
+</html>
