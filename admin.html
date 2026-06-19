@@ -199,20 +199,25 @@ function collect(tr,cfg){
 }
 window.saveRow = async (name, btn)=>{
   const cfg=TABLES[name]; const tr=btn.closest('tr'); const obj=collect(tr,cfg);
-  const pkArr = Array.isArray(cfg.pk)?cfg.pk:[cfg.pk];
-  const hasPk = pkArr.every(k=> obj[k]!=null && obj[k]!=='' );
+  // ⚠️ Khoá chính (id) KHÔNG nằm trong cols nên obj không chứa nó.
+  //    Lấy pk từ thuộc tính data-pk trên <tr> (giống delRow) — nếu không sẽ luôn INSERT trùng.
+  const pkv = tr.dataset.pk;
+  const hasPk = pkv!=null && pkv!=='';
   let res;
-  // với bảng id tự tăng: dòng mới (id rỗng) → insert (bỏ id)
+  // bảng có pk hiển thị/nhập tay (kpi.id smallint, donhang.order_id, doanhso(loai,ky), meta.key) → upsert
   if(name==='kpi'||name==='donhang'||name==='meta'||name==='doanhso'){
     res = await sb.from(name).upsert(obj).select();
   } else if(hasPk){
-    const id = obj[cfg.pk]; const patch={...obj}; delete patch[cfg.pk];
-    res = await sb.from(name).update(patch).eq(cfg.pk,id).select();
+    const patch={...obj}; if(!Array.isArray(cfg.pk)) delete patch[cfg.pk];
+    const idv = isNaN(pkv)?pkv:Number(pkv);
+    res = await sb.from(name).update(patch).eq(cfg.pk, idv).select();
   } else {
-    const ins={...obj}; if(cfg.pk in ins) delete ins[cfg.pk];
+    // dòng mới thật (id tự tăng): bỏ pk để DB tự sinh
+    const ins={...obj}; if(!Array.isArray(cfg.pk) && cfg.pk in ins) delete ins[cfg.pk];
     res = await sb.from(name).insert(ins).select();
   }
   if(res.error) return toast(res.error.message,'err');
+  if(res.data && res.data.length===0) return toast('Không có dòng nào được cập nhật (kiểm tra quyền/khoá).','err');
   toast('Đã lưu','ok'); renderTable(name);
 };
 window.delRow = async (name, btn)=>{
