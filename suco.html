@@ -7,7 +7,7 @@
 <!-- Gate đăng nhập dashboard (giống các trang khác): cần localStorage tks_auth_v1 -->
 <script>try{if(!localStorage.getItem('tks_auth_v1')){location.replace('login.html');}}catch(e){}</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Saira:wght@400;500;600;700&family=Saira+Condensed:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
   :root{
@@ -23,14 +23,28 @@
   .wrap{max-width:1240px;margin:0 auto}
   a{color:var(--steel)}
   .hero{background:linear-gradient(135deg,var(--navy) 0%,var(--navy2) 60%,#1d456e 100%);color:#fff;
-    border-radius:18px;padding:26px 30px;box-shadow:var(--shadow);position:relative;overflow:hidden}
-  .hero h1{margin:0 0 4px;font-size:24px;letter-spacing:.3px}
-  .hero p{margin:0;color:#cfdcec;font-size:13px}
-  .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+    border-radius:18px;padding:30px 34px;box-shadow:var(--shadow);position:relative;overflow:hidden}
+  .hero::after{content:"";position:absolute;inset:0;opacity:.10;
+    background-image:repeating-linear-gradient(45deg,#fff 0 1px,transparent 1px 13px);pointer-events:none}
+  .hero .kick{font-family:'Saira',sans-serif;text-transform:uppercase;letter-spacing:.28em;
+    font-size:11px;color:#9fc0e6;font-weight:600;position:relative;z-index:1}
+  .hero h1{font-family:'Saira Condensed',sans-serif;font-weight:800;font-size:40px;line-height:1.02;
+    text-transform:uppercase;margin:8px 0 4px;position:relative;z-index:1}
+  .hero .cust{font-size:14.5px;color:#cfe0f2;font-weight:500;max-width:680px;position:relative;z-index:1}
+  .hero .codeline{margin-top:16px;display:flex;gap:8px;flex-wrap:wrap;position:relative;z-index:1}
   .chip{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;
-    background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.22);padding:6px 12px;
+    background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.22);padding:5px 11px;
     border-radius:999px;color:#eaf2fb;text-decoration:none;cursor:pointer}
-  .chip:hover{background:rgba(255,255,255,.2)}
+  .chip:hover{background:rgba(255,255,255,.18)}
+  .hero .right{position:absolute;top:24px;right:28px;text-align:right;z-index:1}
+  .hero .right .u-k{font-size:10.5px;color:#9fc0e6;text-transform:uppercase;letter-spacing:.16em;font-weight:600}
+  .hero .right .u-v{font-family:'Saira Condensed',sans-serif;font-weight:800;font-size:26px;line-height:1.1}
+  .hero .right .u-m{font-size:11px;color:#cfe0f2;margin-top:2px}
+  .hero .right .logos{display:flex;gap:9px;justify-content:flex-end;margin-bottom:12px}
+  .logo-plate{background:#fff;border-radius:11px;padding:6px 10px;box-shadow:0 5px 16px rgba(0,0,0,.22);display:inline-flex;align-items:center}
+  .logo-plate img{display:block;height:46px;width:auto}
+  @media(max-width:620px){.hero .right{position:static;text-align:left;margin-top:16px}
+    .hero .right .logos{justify-content:flex-start}.logo-plate img{height:38px}.hero h1{font-size:30px}}
   .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:18px 0}
   .kpi{background:#fff;border:1px solid var(--line);border-radius:14px;padding:15px 16px;box-shadow:var(--shadow)}
   .kpi .lbl{font-size:12px;color:var(--grey);font-weight:600;text-transform:uppercase;letter-spacing:.4px}
@@ -64,13 +78,22 @@
 <body>
 <div class="wrap">
   <div class="hero">
-    <h1>🛠️ Theo dõi sự cố 2026</h1>
-    <p>Bảng theo dõi &amp; phân tích sự cố — Thái Khương (TKS)</p>
-    <div class="chips">
+    <div class="kick">THAI KHUONG SERVICE</div>
+    <h1>Theo dõi sự cố</h1>
+    <div class="cust">Bảng theo dõi &amp; phân tích sự cố 2026 — Thái Khương (TKS)</div>
+    <div class="codeline">
       <a class="chip" href="index.html">← Bảng điều hành</a>
-      <a class="chip" href="danh-sach-don.html">📋 Danh sách đơn hàng</a>
+      <a class="chip" href="danh-sach-don.html">&#128203; Danh sách đơn hàng</a>
       <span class="chip" id="reload">↻ Tải lại</span>
-      <span class="chip" id="updated"></span>
+    </div>
+    <div class="right">
+      <div class="logos">
+        <span class="logo-plate"><img src="assets/logo-1.png" alt="TKT"></span>
+        <span class="logo-plate"><img src="assets/logo-2.png" alt="TKS"></span>
+      </div>
+      <div class="u-k">Cập nhật</div>
+      <div class="u-v" id="heroDate">—</div>
+      <div class="u-m" id="heroTime"></div>
     </div>
   </div>
 
@@ -192,7 +215,9 @@ async function load(){
     if(!r.ok) throw new Error('HTTP '+r.status);
     DATA=await r.json();
     renderKpis(DATA); renderCharts(DATA); renderTable(DATA);
-    document.getElementById('updated').textContent='Cập nhật: '+new Date().toLocaleString('vi-VN',{hour12:false,day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
+    const _now=new Date();
+    document.getElementById('heroDate').textContent=_now.toLocaleDateString('vi-VN',{day:'2-digit',month:'2-digit',year:'numeric'});
+    document.getElementById('heroTime').textContent=_now.toLocaleTimeString('vi-VN',{hour12:false,hour:'2-digit',minute:'2-digit'});
   }catch(e){
     document.querySelector('#tbl tbody').innerHTML=`<tr><td colspan="16" class="loading">Lỗi tải dữ liệu: ${esc(e.message)}</td></tr>`;
   }
