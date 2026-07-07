@@ -908,7 +908,7 @@ function renderTravel(rows) {
     { key: "fly", cls: "th-fly", ic: "&#9992;", name: "Vé máy bay / vé xe", recent: true }
   ];
   var _t = new Date(); _t.setHours(0,0,0,0);
-  var _cut = _t.getTime() - 7*86400000;
+  var _cut = _t.getTime() - 20*86400000;
   function _end(dt){
     var m = String(dt||"").trim().match(/^(\d{1,2})(?:\s*-\s*(\d{1,2}))?\s*\/\s*(\d{1,2})$/);
     if(!m) return null;
